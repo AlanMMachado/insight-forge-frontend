@@ -4,47 +4,16 @@ import { Card } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { memo } from "react"
+import { memo, useState, useEffect } from "react"
 import { Package, TrendingUp } from "lucide-react"
+import { ApiService, Produto } from "@/lib/api"
 
-const tableData = [
-  {
-    produto: "Smartphone XYZ",
-    categoria: "Eletrônicos",
-    estoque: 45,
-    vendas: 120,
-    receita: "R$ 24.000",
-    status: "Normal" as const,
-    trend: "+15%",
-  },
-  {
-    produto: "Camiseta Premium",
-    categoria: "Roupas",
-    estoque: 8,
-    vendas: 85,
-    receita: "R$ 4.250",
-    status: "Baixo" as const,
-    trend: "-5%",
-  },
-  {
-    produto: "Mesa de Escritório",
-    categoria: "Móveis",
-    estoque: 23,
-    vendas: 32,
-    receita: "R$ 9.600",
-    status: "Normal" as const,
-    trend: "+8%",
-  },
-  {
-    produto: "Fone Bluetooth",
-    categoria: "Eletrônicos",
-    estoque: 67,
-    vendas: 156,
-    receita: "R$ 15.600",
-    status: "Alto" as const,
-    trend: "+22%",
-  },
-]
+interface TableItem {
+  produto: string
+  categoria: string
+  estoque: number
+  status: "Baixo" | "Normal" | "Alto"
+}
 
 const TableSkeleton = memo(function TableSkeleton() {
   return (
@@ -74,6 +43,39 @@ interface DataTableProps {
 }
 
 export function DataTable({ isLoading = false }: DataTableProps) {
+  const [tableData, setTableData] = useState<TableItem[]>([])
+
+  useEffect(() => {
+    const loadTableData = async () => {
+      try {
+        const produtos = await ApiService.listarProdutos()
+        
+        const formattedData: TableItem[] = produtos.slice(0, 6).map(produto => {
+          const estoque = produto.quantidadeEstoque || 0
+          let status: "Baixo" | "Normal" | "Alto" = "Normal"
+          
+          if (estoque < 20) status = "Baixo"
+          else if (estoque > 50) status = "Alto"
+          
+          return {
+            produto: produto.nome,
+            categoria: produto.categoria || 'Sem Categoria',
+            estoque,
+            status
+          }
+        })
+
+        setTableData(formattedData)
+      } catch (error) {
+        console.error('Erro ao carregar dados da tabela:', error)
+      }
+    }
+
+    if (!isLoading) {
+      loadTableData()
+    }
+  }, [isLoading])
+
   if (isLoading) {
     return (
       <Card className="p-4 sm:p-6 bg-white border-0 shadow-sm">
@@ -101,10 +103,6 @@ export function DataTable({ isLoading = false }: DataTableProps) {
                   Categoria
                 </TableHead>
                 <TableHead className="text-[#9A9A9A] font-medium py-3 text-xs sm:text-sm">Estoque</TableHead>
-                <TableHead className="text-[#9A9A9A] font-medium py-3 text-xs sm:text-sm hidden md:table-cell">
-                  Vendas
-                </TableHead>
-                <TableHead className="text-[#9A9A9A] font-medium py-3 text-xs sm:text-sm">Receita</TableHead>
                 <TableHead className="text-[#9A9A9A] font-medium py-3 text-xs sm:text-sm">Status</TableHead>
               </TableRow>
             </TableHeader>
@@ -133,16 +131,6 @@ export function DataTable({ isLoading = false }: DataTableProps) {
                       />
                     </div>
                   </TableCell>
-                  <TableCell className="py-4 hidden md:table-cell">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[#000000] text-sm">{item.vendas}</span>
-                      <div className="flex items-center gap-1">
-                        <TrendingUp className="w-3 h-3 text-green-500" />
-                        <span className="text-xs text-green-500">{item.trend}</span>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell className="font-medium text-[#FFD300] py-4 text-sm">{item.receita}</TableCell>
                   <TableCell className="py-4">
                     <Badge
                       variant="secondary"

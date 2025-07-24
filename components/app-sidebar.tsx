@@ -1,6 +1,6 @@
 "use client"
 
-import { BarChart3, FileSpreadsheet, Settings, TrendingUp, FileText, Home } from "lucide-react"
+import { BarChart3, Settings, TrendingUp, FileText, Home, Package } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
@@ -20,9 +20,9 @@ const menuItems = [
     icon: Home,
   },
   {
-    title: "Importar Dados",
-    url: "/importar-dados",
-    icon: FileSpreadsheet,
+    title: "Produtos",
+    url: "/produtos",
+    icon: Package,
   },
   {
     title: "Relatórios",

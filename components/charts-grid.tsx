@@ -3,35 +3,23 @@
 import type React from "react"
 
 import { Card } from "@/components/ui/card"
-import { Bar, BarChart, Line, LineChart, XAxis, YAxis, PieChart, Pie, Cell, ResponsiveContainer } from "recharts"
+import { Bar, BarChart, XAxis, YAxis, PieChart, Pie, Cell, ResponsiveContainer, LineChart, Line } from "recharts"
 import { ChartTooltip, ChartContainer } from "@/components/ui/chart"
 import { Skeleton } from "@/components/ui/skeleton"
-import { memo } from "react"
+import { memo, useState, useEffect } from "react"
 import { TrendingUp, BarChart3, PieChartIcon } from "lucide-react"
+import { ApiService, Produto } from "@/lib/api"
 
-const salesData = [
-  { month: "Jan", sales: 4000 },
-  { month: "Fev", sales: 3000 },
-  { month: "Mar", sales: 5000 },
-  { month: "Abr", sales: 4500 },
-  { month: "Mai", sales: 6000 },
-  { month: "Jun", sales: 5500 },
-]
+interface ChartData {
+  name: string
+  value: number
+  color?: string
+}
 
-const categoryData = [
-  { name: "Eletrônicos", value: 35, color: "#FFD300" },
-  { name: "Roupas", value: 25, color: "#0C0C0C" },
-  { name: "Casa", value: 20, color: "#CFCFCF" },
-  { name: "Outros", value: 20, color: "#9A9A9A" },
-]
-
-const inventoryData = [
-  { product: "Produto A", stock: 85 },
-  { product: "Produto B", stock: 92 },
-  { product: "Produto C", stock: 78 },
-  { product: "Produto D", stock: 95 },
-  { product: "Produto E", stock: 88 },
-]
+interface StockData {
+  product: string
+  stock: number
+}
 
 const ChartSkeleton = memo(function ChartSkeleton() {
   return (
@@ -85,6 +73,57 @@ interface ChartsGridProps {
 }
 
 export function ChartsGrid({ isLoading = false }: ChartsGridProps) {
+  const [categoryData, setCategoryData] = useState<ChartData[]>([])
+  const [inventoryData, setInventoryData] = useState<StockData[]>([])
+  const [salesData] = useState([
+    { month: "Jan", sales: 4000 },
+    { month: "Fev", sales: 3000 },
+    { month: "Mar", sales: 5000 },
+    { month: "Abr", sales: 4500 },
+    { month: "Mai", sales: 6000 }
+  ])
+
+  useEffect(() => {
+    const loadChartData = async () => {
+      try {
+        const produtos = await ApiService.listarProdutos()
+        
+        // Dados por categoria
+        const categoryCounts: { [key: string]: number } = {}
+        produtos.forEach(produto => {
+          const categoria = produto.categoria || 'Sem Categoria'
+          categoryCounts[categoria] = (categoryCounts[categoria] || 0) + 1
+        })
+
+        const total = produtos.length
+        const colors = ['#FFD300', '#0C0C0C', '#CFCFCF', '#9A9A9A', '#7C7C7C']
+        const categoryChartData: ChartData[] = Object.entries(categoryCounts)
+          .map(([name, count], index) => ({
+            name,
+            value: Math.round((count / total) * 100),
+            color: colors[index % colors.length]
+          }))
+
+        setCategoryData(categoryChartData)
+
+        // Dados de estoque (top 5 produtos)
+        const stockData: StockData[] = produtos
+          .slice(0, 5)
+          .map(produto => ({
+            product: produto.nome.length > 15 ? produto.nome.substring(0, 15) + '...' : produto.nome,
+            stock: produto.quantidadeEstoque || 0
+          }))
+
+        setInventoryData(stockData)
+      } catch (error) {
+        console.error('Erro ao carregar dados dos gráficos:', error)
+      }
+    }
+
+    if (!isLoading) {
+      loadChartData()
+    }
+  }, [isLoading])
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
       {/* Vendas Mensais */}

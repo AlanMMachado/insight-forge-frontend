@@ -3,45 +3,20 @@
 import { Card } from "@/components/ui/card"
 import { TrendingUp, TrendingDown, Package, DollarSign } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
-import { memo } from "react"
+import { memo, useState, useEffect } from "react"
+import { ApiService, Produto } from "@/lib/api"
 
-const metrics = [
-  {
-    title: "Vendas Mês",
-    value: "R$ 45.2K",
-    change: "+12%",
-    trend: "up" as const,
-    icon: DollarSign,
-    description: "Receita total do mês atual",
-  },
-  {
-    title: "Produtos Ativos",
-    value: "1,247",
-    change: "+5%",
-    trend: "up" as const,
-    icon: Package,
-    description: "Produtos disponíveis no estoque",
-  },
-  {
-    title: "Margem Lucro",
-    value: "23.5%",
-    change: "-2%",
-    trend: "down" as const,
-    icon: TrendingUp,
-    description: "Margem de lucro média",
-  },
-  {
-    title: "Estoque Baixo",
-    value: "18",
-    change: "+3",
-    trend: "down" as const,
-    icon: TrendingDown,
-    description: "Produtos com estoque crítico",
-  },
-]
+interface MetricData {
+  title: string
+  value: string
+  change?: string
+  trend?: "up" | "down"
+  icon: React.ComponentType<{ className?: string }>
+  description: string
+}
 
 interface MetricCardProps {
-  metric: (typeof metrics)[0]
+  metric: MetricData
   isLoading?: boolean
 }
 
@@ -102,6 +77,79 @@ interface MetricsGridProps {
 }
 
 export function MetricsGrid({ isLoading = false }: MetricsGridProps) {
+  const [metrics, setMetrics] = useState<MetricData[]>([
+    {
+      title: "Produtos Cadastrados",
+      value: "0",
+      icon: Package,
+      description: "Total de produtos cadastrados",
+    },
+    {
+      title: "Produtos Ativos",
+      value: "0",
+      icon: TrendingUp,
+      description: "Produtos disponíveis para venda",
+    },
+    {
+      title: "Estoque Total",
+      value: "0",
+      icon: DollarSign,
+      description: "Quantidade total em estoque",
+    },
+    {
+      title: "Estoque Baixo",
+      value: "0",
+      icon: TrendingDown,
+      description: "Produtos com estoque crítico (≤ 10)",
+    },
+  ])
+
+  useEffect(() => {
+    const loadMetrics = async () => {
+      try {
+        const produtos = await ApiService.listarProdutos()
+        
+        const totalProdutos = produtos.length
+        const produtosAtivos = produtos.filter(p => p.ativo).length
+        const estoqueTotal = produtos.reduce((sum, p) => sum + (p.quantidadeEstoque || 0), 0)
+        const estoqueBaixo = produtos.filter(p => (p.quantidadeEstoque || 0) <= 10).length
+        
+        setMetrics([
+          {
+            title: "Produtos Cadastrados",
+            value: totalProdutos.toString(),
+            icon: Package,
+            description: "Total de produtos cadastrados",
+          },
+          {
+            title: "Produtos Ativos",
+            value: produtosAtivos.toString(),
+            icon: TrendingUp,
+            description: "Produtos disponíveis para venda",
+          },
+          {
+            title: "Estoque Total",
+            value: estoqueTotal.toString(),
+            icon: DollarSign,
+            description: "Quantidade total em estoque",
+          },
+          {
+            title: "Estoque Baixo",
+            value: estoqueBaixo.toString(),
+            icon: TrendingDown,
+            description: "Produtos com estoque crítico (≤ 10)",
+          },
+        ])
+      } catch (error) {
+        console.error('Erro ao carregar métricas:', error)
+      }
+    }
+
+    if (!isLoading) {
+      loadMetrics()
+    }
+  }, [isLoading])
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
       {metrics.map((metric) => (

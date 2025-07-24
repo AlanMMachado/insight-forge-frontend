@@ -3,25 +3,59 @@
 import { Card } from "@/components/ui/card"
 import { Line, LineChart, XAxis, YAxis, Bar, BarChart, ResponsiveContainer } from "recharts"
 import { ChartTooltip, ChartContainer } from "@/components/ui/chart"
+import { useState, useEffect } from "react"
+import { ApiService } from "@/lib/api"
 
-const projectionData = [
-  { month: "Jul", atual: 5500, projecao: 5800 },
-  { month: "Ago", atual: null, projecao: 6200 },
-  { month: "Set", atual: null, projecao: 6500 },
-  { month: "Out", atual: null, projecao: 6800 },
-  { month: "Nov", atual: null, projecao: 7200 },
-  { month: "Dez", atual: null, projecao: 7500 },
-]
+interface ProjectionData {
+  month: string
+  atual: number | null
+  projecao: number
+}
 
-const demandData = [
-  { product: "Produto A", demanda: 85 },
-  { product: "Produto B", demanda: 92 },
-  { product: "Produto C", demanda: 78 },
-  { product: "Produto D", demanda: 95 },
-  { product: "Produto E", demanda: 88 },
-]
+interface DemandData {
+  product: string
+  demanda: number
+}
 
 export function ProjectionsCharts() {
+  const [projectionData] = useState<ProjectionData[]>([
+    { month: "Jul", atual: 5500, projecao: 5800 },
+    { month: "Ago", atual: null, projecao: 6200 },
+    { month: "Set", atual: null, projecao: 6500 },
+    { month: "Out", atual: null, projecao: 6800 },
+    { month: "Nov", atual: null, projecao: 7200 },
+    { month: "Dez", atual: null, projecao: 7500 },
+  ])
+  
+  const [demandData, setDemandData] = useState<DemandData[]>([])
+
+  useEffect(() => {
+    const loadDemandData = async () => {
+      try {
+        const produtos = await ApiService.listarProdutos()
+        
+        // Usar produtos reais com demanda simulada baseada no estoque
+        const demandChartData: DemandData[] = produtos.slice(0, 5).map(produto => ({
+          product: produto.nome.length > 12 ? produto.nome.substring(0, 12) + '...' : produto.nome,
+          demanda: Math.max(60, Math.min(100, (produto.quantidadeEstoque || 0) + Math.random() * 40))
+        }))
+
+        setDemandData(demandChartData)
+      } catch (error) {
+        console.error('Erro ao carregar dados de demanda:', error)
+        // Fallback para dados de exemplo se API falhar
+        setDemandData([
+          { product: "Produto A", demanda: 85 },
+          { product: "Produto B", demanda: 92 },
+          { product: "Produto C", demanda: 78 },
+          { product: "Produto D", demanda: 95 },
+          { product: "Produto E", demanda: 88 },
+        ])
+      }
+    }
+
+    loadDemandData()
+  }, [])
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <Card className="p-6 bg-white border-0 shadow-sm">
