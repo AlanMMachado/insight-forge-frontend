@@ -1,6 +1,6 @@
 "use client"
 
-import { BarChart3, Settings, TrendingUp, FileText, Home, Package } from "lucide-react"
+import { BarChart3, MoveHorizontal, Home, Package } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
@@ -25,19 +25,9 @@ const menuItems = [
     icon: Package,
   },
   {
-    title: "Relatórios",
-    url: "/relatorios",
-    icon: FileText,
-  },
-  {
-    title: "Projeções",
-    url: "/projecoes",
-    icon: TrendingUp,
-  },
-  {
-    title: "Configurações",
-    url: "/configuracoes",
-    icon: Settings,
+    title: "Movimentações",
+    url: "/movimentacoes",
+    icon: MoveHorizontal,
   },
 ]
 

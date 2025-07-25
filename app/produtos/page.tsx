@@ -25,6 +25,8 @@ export default function ProdutosPage() {
   const [searchType, setSearchType] = useState<'nome' | 'categoria'>('nome')
   const [filterCategoria, setFilterCategoria] = useState("")
   const [filterAtivo, setFilterAtivo] = useState<boolean | null>(null)
+  // Novo estado para controlar a visibilidade dos resultados
+  const [hasSearched, setHasSearched] = useState(false)
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [showViewDialog, setShowViewDialog] = useState(false)
@@ -39,11 +41,13 @@ export default function ProdutosPage() {
   })
   const { toast } = useToast()
 
+  // Atualizar loadProdutos para setar hasSearched
   const loadProdutos = async () => {
     try {
       setLoading(true)
       const data = await ApiService.listarProdutos()
       setProdutos(data)
+      setHasSearched(true)
     } catch (error) {
       toast({
         title: "Erro ao carregar produtos",
@@ -55,6 +59,7 @@ export default function ProdutosPage() {
     }
   }
 
+  // Atualizar searchProdutos para setar hasSearched
   const searchProdutos = async () => {
     if (!searchTerm.trim()) {
       toast({
@@ -76,6 +81,7 @@ export default function ProdutosPage() {
       }
       
       setProdutos(Array.isArray(data) ? data : [data])
+      setHasSearched(true)
     } catch (error) {
       toast({
         title: "Erro na busca",
@@ -204,13 +210,9 @@ export default function ProdutosPage() {
 
   // Filtrar produtos
   const filteredProdutos = produtos.filter(produto => {
-    const matchesSearch = produto.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (produto.categoria || "").toLowerCase().includes(searchTerm.toLowerCase())
-    
     const matchesCategoria = filterCategoria === "" || produto.categoria === filterCategoria
     const matchesAtivo = filterAtivo === null || produto.ativo === filterAtivo
-
-    return matchesSearch && matchesCategoria && matchesAtivo
+    return matchesCategoria && matchesAtivo
   })
 
   // Obter categorias únicas para o filtro
@@ -246,7 +248,7 @@ export default function ProdutosPage() {
         </div>
       </div>
 
-      {/* Controles de Busca */}
+      {/* Card de Busca - simplificado */}
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">Buscar Produtos</CardTitle>
@@ -287,7 +289,10 @@ export default function ProdutosPage() {
             {/* Botões de ação */}
             <div className="lg:col-span-4 flex flex-col sm:flex-row gap-2 items-stretch sm:items-end">
               <Button
-                onClick={searchProdutos}
+                onClick={() => {
+                  setHasSearched(true)
+                  searchProdutos()
+                }}
                 disabled={!searchTerm.trim() || loading}
                 className="bg-[#FFD300] text-[#0C0C0C] hover:bg-[#E6BD00] flex-1 h-10"
               >
@@ -295,7 +300,10 @@ export default function ProdutosPage() {
                 Buscar
               </Button>
               <Button
-                onClick={loadProdutos}
+                onClick={() => {
+                  setHasSearched(true)
+                  loadProdutos()
+                }}
                 disabled={loading}
                 variant="outline"
                 className="flex-1 h-10"
@@ -305,78 +313,41 @@ export default function ProdutosPage() {
               </Button>
             </div>
           </div>
-          
-          {/* Filtros adicionais */}
-          {produtos.length > 0 && (
-            <div className="border-t pt-4">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                  <Label htmlFor="filterCategoria">Filtrar por categoria</Label>
-                  <Select value={filterCategoria} onValueChange={(value) => setFilterCategoria(value === "all" ? "" : value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Todas as categorias" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todas as categorias</SelectItem>
-                      {categorias.map(categoria => (
-                        <SelectItem key={categoria} value={categoria!}>
-                          {categoria}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div>
-                  <Label htmlFor="filterStatus">Filtrar por status</Label>
-                  <Select 
-                    value={filterAtivo === null ? "all" : filterAtivo.toString()} 
-                    onValueChange={(value) => {
-                      const ativo = value === "all" ? null : value === "true"
-                      setFilterAtivo(ativo)
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Todos os status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todos os status</SelectItem>
-                      <SelectItem value="true">Ativo</SelectItem>
-                      <SelectItem value="false">Inativo</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="flex items-end">
-                  <Button 
-                    variant="outline" 
-                    onClick={() => {
-                      setSearchTerm("")
-                      setFilterCategoria("")
-                      setFilterAtivo(null)
-                      setProdutos([])
-                    }}
-                    className="w-full"
-                  >
-                    <Filter className="w-4 h-4 mr-2" />
-                    Limpar Filtros
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
         </CardContent>
       </Card>
 
-      {/* Tabela de Produtos */}
+      {/* Card de Produtos - modificado */}
       <Card>
-        <CardHeader>
-          <CardTitle>
-            Produtos ({filteredProdutos.length})
-          </CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>
+              Produtos ({filteredProdutos.length})
+            </CardTitle>
+          </div>
+          <Button 
+            variant="outline" 
+            onClick={() => {
+              setHasSearched(false)
+              setSearchTerm("")
+              setFilterCategoria("")
+              setFilterAtivo(null)
+              setProdutos([])
+            }}
+          >
+            <Filter className="w-4 h-4 mr-2" />
+            Limpar Filtros
+          </Button>
         </CardHeader>
         <CardContent>
-          {loading ? (
+          {!hasSearched ? (
+            <div className="text-center py-8">
+              <Search className="mx-auto h-12 w-12 text-gray-400" />
+              <h3 className="mt-2 text-sm font-medium text-gray-900">Use a busca ou os filtros</h3>
+              <p className="mt-1 text-sm text-gray-500">
+                Digite o nome do produto, categoria ou use os filtros para visualizar os produtos.
+              </p>
+            </div>
+          ) : loading ? (
             <div className="text-center py-8">Carregando produtos...</div>
           ) : filteredProdutos.length === 0 ? (
             <div className="text-center py-8">
@@ -387,89 +358,134 @@ export default function ProdutosPage() {
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="min-w-[150px]">Nome</TableHead>
-                    <TableHead className="hidden sm:table-cell">Categoria</TableHead>
-                    <TableHead className="hidden md:table-cell">Preço</TableHead>
-                    <TableHead className="text-center">Estoque</TableHead>
-                    <TableHead className="text-center">Status</TableHead>
-                    <TableHead className="text-center min-w-[120px]">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredProdutos.map((produto) => (
-                    <TableRow key={produto.id}>
-                      <TableCell className="font-medium">
-                        <div className="space-y-1">
-                          <div className="font-medium text-sm">{produto.nome}</div>
-                          <div className="text-xs text-gray-500 sm:hidden">
-                            {produto.categoria || "Sem categoria"}
-                          </div>
-                          <div className="text-xs text-gray-500 md:hidden">
-                            {produto.preco ? `R$ ${produto.preco.toFixed(2)}` : "Sem preço"}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="hidden sm:table-cell">
-                        {produto.categoria || "-"}
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        {produto.preco ? `R$ ${produto.preco.toFixed(2)}` : "-"}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <div className="flex items-center justify-center gap-2">
-                          <span className="font-medium">{produto.quantidadeEstoque || 0}</span>
-                          <div
-                            className={`w-2 h-2 rounded-full ${
-                              (produto.quantidadeEstoque || 0) < 20 
-                                ? "bg-red-500" 
-                                : (produto.quantidadeEstoque || 0) > 50 
-                                ? "bg-green-500" 
-                                : "bg-yellow-500"
-                            }`}
-                          />
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <Badge variant={produto.ativo ? "default" : "secondary"} className="text-xs">
-                          {produto.ativo ? "Ativo" : "Inativo"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex justify-center space-x-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => openViewDialog(produto)}
-                            className="h-8 w-8 p-0"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => openEditDialog(produto)}
-                            className="h-8 w-8 p-0"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => produto.id && handleDeleteProduto(produto.id)}
-                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
+            <div className="space-y-6">
+              {/* Filtros movidos para dentro do card de produtos */}
+              <div className="border-b pb-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="filterCategoria">Filtrar por categoria</Label>
+                    <Select value={filterCategoria} onValueChange={(value) => setFilterCategoria(value === "all" ? "" : value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Todas as categorias" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todas as categorias</SelectItem>
+                        {categorias.map(categoria => (
+                          <SelectItem key={categoria} value={categoria!}>
+                            {categoria}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="filterStatus">Filtrar por status</Label>
+                    <Select 
+                      value={filterAtivo === null ? "all" : filterAtivo.toString()} 
+                      onValueChange={(value) => {
+                        const ativo = value === "all" ? null : value === "true"
+                        setFilterAtivo(ativo)
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Todos os status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todos os status</SelectItem>
+                        <SelectItem value="true">Ativo</SelectItem>
+                        <SelectItem value="false">Inativo</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Tabela */}
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="min-w-[150px]">Nome</TableHead>
+                      <TableHead className="hidden sm:table-cell">Categoria</TableHead>
+                      <TableHead className="hidden md:table-cell">Preço</TableHead>
+                      <TableHead className="text-center">Estoque</TableHead>
+                      <TableHead className="text-center">Status</TableHead>
+                      <TableHead className="text-center min-w-[120px]">Ações</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredProdutos.map((produto) => (
+                      <TableRow key={produto.id}>
+                        <TableCell className="font-medium">
+                          <div className="space-y-1">
+                            <div className="font-medium text-sm">{produto.nome}</div>
+                            <div className="text-xs text-gray-500 sm:hidden">
+                              {produto.categoria || "Sem categoria"}
+                            </div>
+                            <div className="text-xs text-gray-500 md:hidden">
+                              {produto.preco ? `R$ ${produto.preco.toFixed(2)}` : "Sem preço"}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="hidden sm:table-cell">
+                          {produto.categoria || "-"}
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          {produto.preco ? `R$ ${produto.preco.toFixed(2)}` : "-"}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <div className="flex items-center justify-center gap-2">
+                            <span className="font-medium">{produto.quantidadeEstoque || 0}</span>
+                            <div
+                              className={`w-2 h-2 rounded-full ${
+                                (produto.quantidadeEstoque || 0) < 20 
+                                  ? "bg-red-500" 
+                                  : (produto.quantidadeEstoque || 0) > 50 
+                                  ? "bg-green-500" 
+                                  : "bg-yellow-500"
+                              }`}
+                            />
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Badge variant={produto.ativo ? "default" : "secondary"} className="text-xs">
+                            {produto.ativo ? "Ativo" : "Inativo"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex justify-center space-x-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => openViewDialog(produto)}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => openEditDialog(produto)}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => produto.id && handleDeleteProduto(produto.id)}
+                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
           )}
         </CardContent>

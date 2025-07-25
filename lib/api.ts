@@ -19,10 +19,14 @@ export const PRODUTOS_ENDPOINTS = {
 export const MOVIMENTACOES_ENDPOINTS = {
   importar: '/api/movimentacoes/importarMovimentacoes',
   exportarPorProduto: '/api/movimentacoes/exportarMovimentacoesPorProduto',
-  exportarPorCategoria: '/api/movimentacoes/exportarMovimentacoesPorCategoria',
+  exportarPorTipo: '/api/movimentacoes/exportarMovimentacoesPorTipo',
+  exportarPorData: '/api/movimentacoes/exportarMovimentacoesPorData',
   listar: '/api/movimentacoes/listarMovimentacoes',
   criar: '/api/movimentacoes/criarMovimentacao',
   buscarPorId: '/api/movimentacoes/buscarPorId',
+  filtrarPorTipo: '/api/movimentacoes/filtrarPorTipo',
+  filtrarPorData: '/api/movimentacoes/filtrarPorData',
+  filtrarPorProduto: '/api/movimentacoes/filtrarPorProduto',
   atualizar: '/api/movimentacoes/atualizarMovimentacao',
   deletar: '/api/movimentacoes/deletarMovimentacao',
 } as const
@@ -42,9 +46,11 @@ export interface Produto {
 
 export interface Movimentacao {
   id?: number
-  produtoId: number
-  tipoMovimentacao: 'ENTRADA' | 'SAIDA'
-  quantidade: number
+  produto: {
+    id: number
+  }
+  tipoMovimentacao: 'COMPRA' | 'VENDA'
+  quantidadeMovimentada: number
   dataMovimentacao: string
   motivo?: string
   observacoes?: string
@@ -184,14 +190,28 @@ export class ApiService {
     return await response.blob()
   }
 
-  static async exportarMovimentacoesPorCategoria(categoria: string): Promise<Blob> {
+  static async exportarMovimentacoesPorTipo(tipo: 'COMPRA' | 'VENDA'): Promise<Blob> {
     const response = await fetch(
-      `${API_BASE_URL}${MOVIMENTACOES_ENDPOINTS.exportarPorCategoria}?categoria=${categoria}`
+      `${API_BASE_URL}${MOVIMENTACOES_ENDPOINTS.exportarPorTipo}?tipo=${tipo}`
     )
     
     if (!response.ok) {
-      throw new Error('Erro ao exportar movimentações por categoria')
+      throw new Error('Erro ao exportar movimentações por tipo')
     }
+
+    return await response.blob()
+  }
+
+  static async exportarMovimentacoesPorData(dataInicio: string, dataFim: string): Promise<Blob> {
+    const response = await fetch(
+      `${API_BASE_URL}${MOVIMENTACOES_ENDPOINTS.exportarPorData}?dataInicio=${dataInicio}&dataFim=${dataFim}`
+    )
+    
+    if (!response.ok) {
+      throw new Error('Erro ao exportar movimentações por data')
+    }
+
+    return await response.blob()
 
     return await response.blob()
   }
@@ -209,6 +229,22 @@ export class ApiService {
 
   static async buscarMovimentacaoPorId(id: number): Promise<Movimentacao> {
     return this.request<Movimentacao>(`${MOVIMENTACOES_ENDPOINTS.buscarPorId}/${id}`)
+  }
+
+  static async filtrarPorTipo(tipo: 'COMPRA' | 'VENDA'): Promise<Movimentacao[]> {
+    return this.request<Movimentacao[]>(`${MOVIMENTACOES_ENDPOINTS.filtrarPorTipo}?tipo=${tipo}`)
+  }
+
+  static async filtrarPorData(dataInicio: string, dataFim: string): Promise<Movimentacao[]> {
+    return this.request<Movimentacao[]>(
+      `${MOVIMENTACOES_ENDPOINTS.filtrarPorData}?dataInicio=${dataInicio}&dataFim=${dataFim}`
+    )
+  }
+
+  static async filtrarPorProduto(produtoId: number): Promise<Movimentacao[]> {
+    return this.request<Movimentacao[]>(
+      `${MOVIMENTACOES_ENDPOINTS.filtrarPorProduto}?produtoId=${produtoId}`
+    )
   }
 
   static async atualizarMovimentacao(id: number, movimentacao: Movimentacao): Promise<Movimentacao> {
