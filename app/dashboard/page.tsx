@@ -4,6 +4,7 @@ import { DashboardHeader } from "@/components/dashboard-header"
 import { MetricsGrid } from "@/components/metrics-grid"
 import { ChartsGrid } from "@/components/charts-grid"
 import { DataTable } from "@/components/data-table"
+import AuthenticatedLayout from "@/components/authenticated-layout"
 import { useState, useEffect } from "react"
 
 export default function DashboardPage() {
@@ -19,11 +20,13 @@ export default function DashboardPage() {
   }, [])
 
   return (
-    <div className="p-4 sm:p-6 space-y-6 sm:space-y-8">
-      <DashboardHeader />
-      <MetricsGrid isLoading={isLoading} />
-      <ChartsGrid isLoading={isLoading} />
-      <DataTable isLoading={isLoading} />
-    </div>
+    <AuthenticatedLayout>
+      <div className="p-4 sm:p-6 space-y-6 sm:space-y-8">
+        <DashboardHeader />
+        <MetricsGrid isLoading={isLoading} />
+        <ChartsGrid isLoading={isLoading} />
+        <DataTable isLoading={isLoading} />
+      </div>
+    </AuthenticatedLayout>
   )
 }

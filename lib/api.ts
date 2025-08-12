@@ -1,6 +1,11 @@
 // Configuração da API
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080'
 
+// Endpoints de autenticação
+export const AUTH_ENDPOINTS = {
+  login: '/auth/login',
+} as const
+
 // Endpoints de produtos
 export const PRODUTOS_ENDPOINTS = {
   importar: '/api/produtos/importarProdutos',
@@ -31,7 +36,26 @@ export const MOVIMENTACOES_ENDPOINTS = {
   deletar: '/api/movimentacoes/deletarMovimentacao',
 } as const
 
+// Endpoints de usuários
+export const USUARIOS_ENDPOINTS = {
+  listar: '/usuarios',
+  buscarPorId: '/usuarios/buscarUsuario',
+  atualizar: '/usuarios/atualizarUsuario',
+  deletar: '/usuarios/deletarUsuario',
+  registrarUser: '/usuarios/registrarUser', // Endpoint público para registro de usuários
+  registrarAdmin: '/usuarios/registrarAdmin', // Endpoint para admin registrar usuários
+} as const
+
 // Tipos para as entidades
+export interface Usuario {
+  id?: number
+  nome: string
+  email: string
+  role: 'USER' | 'ADMIN'
+  dataCriacao?: string
+  createdAt?: string
+}
+
 export interface Produto {
   id?: number
   nome: string
@@ -59,6 +83,14 @@ export interface Movimentacao {
 
 // Funções de API
 export class ApiService {
+  private static getAuthHeaders(): HeadersInit {
+    const token = localStorage.getItem('token')
+    return {
+      'Content-Type': 'application/json',
+      ...(token && { Authorization: `Bearer ${token}` }),
+    }
+  }
+
   private static async request<T>(
     endpoint: string,
     options: RequestInit = {}
@@ -67,7 +99,7 @@ export class ApiService {
     
     const response = await fetch(url, {
       headers: {
-        'Content-Type': 'application/json',
+        ...this.getAuthHeaders(),
         ...options.headers,
       },
       ...options,
@@ -96,9 +128,13 @@ export class ApiService {
   static async importarProdutos(file: File): Promise<string> {
     const formData = new FormData()
     formData.append('file', file)
+    const token = localStorage.getItem('token')
 
     const response = await fetch(`${API_BASE_URL}${PRODUTOS_ENDPOINTS.importar}`, {
       method: 'POST',
+      headers: {
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
       body: formData,
     })
 
@@ -111,7 +147,12 @@ export class ApiService {
   }
 
   static async exportarProdutos(): Promise<Blob> {
-    const response = await fetch(`${API_BASE_URL}${PRODUTOS_ENDPOINTS.exportar}`)
+    const token = localStorage.getItem('token')
+    const response = await fetch(`${API_BASE_URL}${PRODUTOS_ENDPOINTS.exportar}`, {
+      headers: {
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+    })
     
     if (!response.ok) {
       throw new Error('Erro ao exportar produtos')
@@ -164,9 +205,13 @@ export class ApiService {
   static async importarMovimentacoes(file: File): Promise<string> {
     const formData = new FormData()
     formData.append('file', file)
+    const token = localStorage.getItem('token')
 
     const response = await fetch(`${API_BASE_URL}${MOVIMENTACOES_ENDPOINTS.importar}`, {
       method: 'POST',
+      headers: {
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
       body: formData,
     })
 
@@ -179,8 +224,14 @@ export class ApiService {
   }
 
   static async exportarMovimentacoesPorProduto(produtoId: number): Promise<Blob> {
+    const token = localStorage.getItem('token')
     const response = await fetch(
-      `${API_BASE_URL}${MOVIMENTACOES_ENDPOINTS.exportarPorProduto}?produtoId=${produtoId}`
+      `${API_BASE_URL}${MOVIMENTACOES_ENDPOINTS.exportarPorProduto}?produtoId=${produtoId}`,
+      {
+        headers: {
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+      }
     )
     
     if (!response.ok) {
@@ -191,8 +242,14 @@ export class ApiService {
   }
 
   static async exportarMovimentacoesPorTipo(tipo: 'COMPRA' | 'VENDA'): Promise<Blob> {
+    const token = localStorage.getItem('token')
     const response = await fetch(
-      `${API_BASE_URL}${MOVIMENTACOES_ENDPOINTS.exportarPorTipo}?tipo=${tipo}`
+      `${API_BASE_URL}${MOVIMENTACOES_ENDPOINTS.exportarPorTipo}?tipo=${tipo}`,
+      {
+        headers: {
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+      }
     )
     
     if (!response.ok) {
@@ -203,8 +260,14 @@ export class ApiService {
   }
 
   static async exportarMovimentacoesPorData(dataInicio: string, dataFim: string): Promise<Blob> {
+    const token = localStorage.getItem('token')
     const response = await fetch(
-      `${API_BASE_URL}${MOVIMENTACOES_ENDPOINTS.exportarPorData}?dataInicio=${dataInicio}&dataFim=${dataFim}`
+      `${API_BASE_URL}${MOVIMENTACOES_ENDPOINTS.exportarPorData}?dataInicio=${dataInicio}&dataFim=${dataFim}`,
+      {
+        headers: {
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+      }
     )
     
     if (!response.ok) {
@@ -256,6 +319,88 @@ export class ApiService {
 
   static async deletarMovimentacao(id: number): Promise<void> {
     return this.request<void>(`${MOVIMENTACOES_ENDPOINTS.deletar}/${id}`, {
+      method: 'DELETE',
+    })
+  }
+
+  // Usuários
+  static async listarUsuarios(): Promise<Usuario[]> {
+    return this.request<Usuario[]>(USUARIOS_ENDPOINTS.listar)
+  }
+
+  static async buscarUsuarioPorId(id: number): Promise<Usuario> {
+    return this.request<Usuario>(`${USUARIOS_ENDPOINTS.buscarPorId}/${id}`)
+  }
+
+  static async buscarUsuarioPorNome(nome: string): Promise<Usuario[]> {
+    // Filtragem do lado cliente já que não há endpoint específico para busca por nome
+    const usuarios = await this.listarUsuarios()
+    return usuarios.filter(usuario => 
+      usuario.nome.toLowerCase().includes(nome.toLowerCase())
+    )
+  }
+
+  static async criarUsuario(usuario: { nome: string; email: string; password: string; role?: 'USER' | 'ADMIN' }): Promise<{
+    message: string;
+    id: number;
+    createdAt: string;
+  }> {
+    // Se tem role definido como ADMIN, usa o endpoint de admin, caso contrário usa o endpoint público
+    const endpoint = usuario.role === 'ADMIN' 
+      ? USUARIOS_ENDPOINTS.registrarAdmin 
+      : USUARIOS_ENDPOINTS.registrarUser;
+    
+    return this.request<{
+      message: string;
+      id: number;
+      createdAt: string;
+    }>(endpoint, {
+      method: 'POST',
+      body: JSON.stringify(usuario),
+    })
+  }
+
+  // Função específica para registrar usuário público (sempre USER)
+  static async registrarUsuarioPublico(usuario: { nome: string; email: string; password: string }): Promise<{
+    message: string;
+    id: number;
+    createdAt: string;
+  }> {
+    return this.request<{
+      message: string;
+      id: number;
+      createdAt: string;
+    }>(USUARIOS_ENDPOINTS.registrarUser, {
+      method: 'POST',
+      body: JSON.stringify(usuario),
+    })
+  }
+
+  // Função específica para admin registrar usuário (pode ser USER ou ADMIN)
+  static async registrarUsuarioPorAdmin(usuario: { nome: string; email: string; password: string; role: 'USER' | 'ADMIN' }): Promise<{
+    message: string;
+    id: number;
+    createdAt: string;
+  }> {
+    return this.request<{
+      message: string;
+      id: number;
+      createdAt: string;
+    }>(USUARIOS_ENDPOINTS.registrarAdmin, {
+      method: 'POST',
+      body: JSON.stringify(usuario),
+    })
+  }
+
+  static async atualizarUsuario(id: number, usuario: Omit<Usuario, "id" | "dataCriacao">): Promise<Usuario> {
+    return this.request<Usuario>(`${USUARIOS_ENDPOINTS.atualizar}/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(usuario),
+    })
+  }
+
+  static async excluirUsuario(id: number): Promise<void> {
+    return this.request<void>(`${USUARIOS_ENDPOINTS.deletar}/${id}`, {
       method: 'DELETE',
     })
   }

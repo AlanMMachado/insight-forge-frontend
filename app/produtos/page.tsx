@@ -16,6 +16,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Package, Plus, Search, Edit, Trash2, Eye, Download, Filter, AlertTriangle, CheckCircle, Upload } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { ApiService, Produto } from "@/lib/api"
+import AuthenticatedLayout from "@/components/authenticated-layout"
 
 export default function ProdutosPage() {
   const router = useRouter()
@@ -219,7 +220,8 @@ export default function ProdutosPage() {
   const categorias = Array.from(new Set(produtos.map(p => p.categoria).filter(Boolean)))
 
   return (
-    <div className="p-6 space-y-6">
+    <AuthenticatedLayout>
+      <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center">
@@ -742,6 +744,7 @@ export default function ProdutosPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </AuthenticatedLayout>
   )
 }

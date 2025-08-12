@@ -12,6 +12,7 @@ import { FileSpreadsheet, CheckCircle, AlertTriangle, Download, Upload, X } from
 import { useToast } from "@/hooks/use-toast"
 import { ApiService } from "@/lib/api"
 import { createProdutosTemplate, createMovimentacoesTemplate, downloadFile } from "@/lib/templates"
+import AuthenticatedLayout from "@/components/authenticated-layout"
 
 type ImportType = "produtos" | "movimentacoes"
 
@@ -198,7 +199,8 @@ export default function ImportarDadosPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <AuthenticatedLayout>
+      <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-6 max-w-7xl">
         {/* Header */}
         <div className="mb-8">
@@ -501,6 +503,7 @@ export default function ImportarDadosPage() {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </AuthenticatedLayout>
   )
 }
