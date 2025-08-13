@@ -12,7 +12,7 @@ import { Package, Search, Download, Filter, MoveHorizontal } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { ApiService, Movimentacao, Produto } from "@/lib/api"
 import { Badge } from "@/components/ui/badge"
-import { format, parseISO } from "date-fns"
+import { format, parseISO, isValid } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import AuthenticatedLayout from "@/components/authenticated-layout"
 
@@ -480,7 +480,12 @@ export default function MovimentacoesPage() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            {format(parseISO(movimentacao.dataMovimentacao), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                            {(() => {
+                              const parsedDate = parseISO(movimentacao.dataMovimentacao);
+                              return isValid(parsedDate)
+                                ? format(parsedDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })
+                                : "-";
+                            })()}
                           </TableCell>
                           <TableCell>
                             <Badge variant={movimentacao.tipoMovimentacao === 'COMPRA' ? 'default' : 'secondary'}>

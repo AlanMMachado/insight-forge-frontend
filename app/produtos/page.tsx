@@ -40,7 +40,11 @@ export default function ProdutosPage() {
     ativo: true,
     descricao: ""
   })
+  const [categorias, setCategorias] = useState<string[]>([]);
+  const [novaCategoria, setNovaCategoria] = useState("");
+  const [showNewCategoryDialog, setShowNewCategoryDialog] = useState(false); // Novo estado para o diálogo de nova categoria
   const { toast } = useToast()
+  const [currency, setCurrency] = useState("BRL"); // Adicionado estado para o tipo de moeda
 
   // Atualizar loadProdutos para setar hasSearched
   const loadProdutos = async () => {
@@ -217,7 +221,25 @@ export default function ProdutosPage() {
   })
 
   // Obter categorias únicas para o filtro
-  const categorias = Array.from(new Set(produtos.map(p => p.categoria).filter(Boolean)))
+  const categoriasUnicas = Array.from(new Set(produtos.map(p => p.categoria).filter(Boolean)))
+
+  // Função para carregar categorias
+  const loadCategorias = async () => {
+    try {
+      const data = await ApiService.listarCategorias();
+      setCategorias(data);
+    } catch (error) {
+      toast({
+        title: "Erro ao carregar categorias",
+        description: error instanceof Error ? error.message : "Erro desconhecido",
+        variant: "destructive",
+      });
+    }
+  };
+
+  useEffect(() => {
+    loadCategorias();
+  }, []);
 
   return (
     <AuthenticatedLayout>
@@ -372,7 +394,7 @@ export default function ProdutosPage() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">Todas as categorias</SelectItem>
-                        {categorias.map(categoria => (
+                        {categoriasUnicas.map(categoria => (
                           <SelectItem key={categoria} value={categoria!}>
                             {categoria}
                           </SelectItem>
@@ -494,76 +516,126 @@ export default function ProdutosPage() {
       </Card>
 
       {/* Dialog para Criar Produto */}
-      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent className="max-w-2xl">
+      <Dialog open={showCreateDialog} onOpenChange={(open) => {
+        setShowCreateDialog(open);
+        if (open) loadCategorias(); // Carregar categorias ao abrir o diálogo
+      }}>
+        <DialogContent className="max-w-md"> {/* Reduzido para max-w-md */}
           <DialogHeader>
             <DialogTitle>Criar Novo Produto</DialogTitle>
             <DialogDescription>
               Preencha as informações do produto
             </DialogDescription>
           </DialogHeader>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+          <div className="space-y-4"> {/* Alterado para space-y-4 para empilhar os campos */}
             <div>
               <Label htmlFor="nome">Nome *</Label>
               <Input
                 id="nome"
                 value={formData.nome}
-                onChange={(e) => setFormData({...formData, nome: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
                 placeholder="Nome do produto"
               />
             </div>
-            
+
             <div>
               <Label htmlFor="categoria">Categoria</Label>
-              <Input
-                id="categoria"
-                value={formData.categoria}
-                onChange={(e) => setFormData({...formData, categoria: e.target.value})}
-                placeholder="Categoria do produto"
-              />
+              <div className="flex items-center gap-2">
+                <Select
+                  value={formData.categoria}
+                  onValueChange={(value) => setFormData({ ...formData, categoria: value })}
+                  disabled={categorias.length === 0}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={categorias.length === 0 ? "Nenhuma categoria cadastrada" : "Selecione uma categoria"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categorias.length === 0 ? (
+                      <div className="p-2 text-sm text-gray-500">
+                        Nenhuma categoria cadastrada. Crie uma nova.
+                      </div>
+                    ) : (
+                      categorias.map((categoria) => (
+                        <SelectItem key={categoria} value={categoria}>
+                          {categoria}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+                <Button
+                  onClick={() => setShowNewCategoryDialog(true)}
+                  className="ml-2"
+                >
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
-            
+
             <div>
               <Label htmlFor="preco">Preço</Label>
-              <Input
-                id="preco"
-                type="number"
-                step="0.01"
-                value={formData.preco}
-                onChange={(e) => setFormData({...formData, preco: parseFloat(e.target.value) || 0})}
-                placeholder="0.00"
-              />
+              <div className="flex items-center gap-2">
+                <Input
+                  id="preco"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={formData.preco || ""} // Exibe vazio ao invés de 0
+                  onChange={(e) => {
+                    const value = parseFloat(e.target.value);
+                    setFormData({ ...formData, preco: isNaN(value) ? 0 : value }); // Define 0 se o valor for inválido
+                  }}
+                  placeholder="0.00"
+                />
+                <Select
+                  value={currency}
+                  onValueChange={(value) => setCurrency(value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="BRL" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="BRL">BRL</SelectItem>
+                    <SelectItem value="USD">USD</SelectItem>
+                    <SelectItem value="EUR">EUR</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            
+
             <div>
               <Label htmlFor="estoque">Quantidade em Estoque</Label>
               <Input
                 id="estoque"
                 type="number"
-                value={formData.quantidadeEstoque}
-                onChange={(e) => setFormData({...formData, quantidadeEstoque: parseInt(e.target.value) || 0})}
+                min="0"
+                value={formData.quantidadeEstoque || ""} // Exibe vazio ao invés de 0
+                onChange={(e) => {
+                  const value = parseInt(e.target.value);
+                  setFormData({ ...formData, quantidadeEstoque: isNaN(value) ? 0 : value }); // Define 0 se o valor for inválido
+                }}
                 placeholder="0"
               />
             </div>
-            
-            <div className="md:col-span-2">
+
+            <div>
               <Label htmlFor="descricao">Descrição</Label>
               <Textarea
                 id="descricao"
                 value={formData.descricao}
-                onChange={(e) => setFormData({...formData, descricao: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
                 placeholder="Descrição do produto"
                 rows={3}
               />
             </div>
-            
-            <div className="md:col-span-2">
+
+            <div>
               <div className="flex items-center space-x-2">
                 <Switch
                   id="ativo"
                   checked={formData.ativo}
-                  onCheckedChange={(checked) => setFormData({...formData, ativo: checked})}
+                  onCheckedChange={(checked) => setFormData({ ...formData, ativo: checked })}
                 />
                 <Label htmlFor="ativo">Produto ativo</Label>
               </div>
@@ -587,86 +659,126 @@ export default function ProdutosPage() {
 
       {/* Dialog para Editar Produto */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-md"> {/* Reduzido para max-w-md */}
           <DialogHeader>
             <DialogTitle>Editar Produto</DialogTitle>
             <DialogDescription>
               Altere as informações do produto
             </DialogDescription>
           </DialogHeader>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+          <div className="space-y-4"> {/* Alterado para space-y-4 para empilhar os campos */}
             <div>
               <Label htmlFor="edit-nome">Nome *</Label>
               <Input
                 id="edit-nome"
                 value={formData.nome}
-                onChange={(e) => setFormData({...formData, nome: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
                 placeholder="Nome do produto"
               />
             </div>
-            
+
             <div>
               <Label htmlFor="edit-categoria">Categoria</Label>
-              <Input
-                id="edit-categoria"
-                value={formData.categoria}
-                onChange={(e) => setFormData({...formData, categoria: e.target.value})}
-                placeholder="Categoria do produto"
-              />
+              <div className="flex items-center gap-2">
+                <Select
+                  value={formData.categoria}
+                  onValueChange={(value) => setFormData({ ...formData, categoria: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione uma categoria" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categorias.map((categoria) => (
+                      <SelectItem key={categoria} value={categoria}>
+                        {categoria}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  onClick={() => setShowNewCategoryDialog(true)}
+                  className="ml-2"
+                >
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
-            
+
             <div>
               <Label htmlFor="edit-preco">Preço</Label>
-              <Input
-                id="edit-preco"
-                type="number"
-                step="0.01"
-                value={formData.preco}
-                onChange={(e) => setFormData({...formData, preco: parseFloat(e.target.value) || 0})}
-                placeholder="0.00"
-              />
+              <div className="flex items-center gap-2">
+                <Input
+                  id="edit-preco"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={formData.preco || ""} // Exibe vazio ao invés de 0
+                  onChange={(e) => {
+                    const value = parseFloat(e.target.value);
+                    setFormData({ ...formData, preco: isNaN(value) ? 0 : value }); // Define 0 se o valor for inválido
+                  }}
+                  placeholder="0.00"
+                />
+                <Select
+                  value={currency}
+                  onValueChange={(value) => setCurrency(value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="BRL" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="BRL">BRL</SelectItem>
+                    <SelectItem value="USD">USD</SelectItem>
+                    <SelectItem value="EUR">EUR</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            
+
             <div>
               <Label htmlFor="edit-estoque">Quantidade em Estoque</Label>
               <Input
                 id="edit-estoque"
                 type="number"
-                value={formData.quantidadeEstoque}
-                onChange={(e) => setFormData({...formData, quantidadeEstoque: parseInt(e.target.value) || 0})}
+                min="0"
+                value={formData.quantidadeEstoque || ""} // Exibe vazio ao invés de 0
+                onChange={(e) => {
+                  const value = parseInt(e.target.value);
+                  setFormData({ ...formData, quantidadeEstoque: isNaN(value) ? 0 : value }); // Define 0 se o valor for inválido
+                }}
                 placeholder="0"
               />
             </div>
-            
-            <div className="md:col-span-2">
+
+            <div>
               <Label htmlFor="edit-descricao">Descrição</Label>
               <Textarea
                 id="edit-descricao"
                 value={formData.descricao}
-                onChange={(e) => setFormData({...formData, descricao: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
                 placeholder="Descrição do produto"
                 rows={3}
               />
             </div>
-            
-            <div className="md:col-span-2">
+
+            <div>
               <div className="flex items-center space-x-2">
                 <Switch
                   id="edit-ativo"
                   checked={formData.ativo}
-                  onCheckedChange={(checked) => setFormData({...formData, ativo: checked})}
+                  onCheckedChange={(checked) => setFormData({ ...formData, ativo: checked })}
                 />
                 <Label htmlFor="edit-ativo">Produto ativo</Label>
               </div>
             </div>
           </div>
-          
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowEditDialog(false)}>
               Cancelar
             </Button>
-            <Button 
+            <Button
               onClick={handleUpdateProduto}
               disabled={!formData.nome.trim()}
               className="bg-[#FFD300] text-[#0C0C0C] hover:bg-[#E6BD00]"
@@ -740,6 +852,47 @@ export default function ProdutosPage() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowViewDialog(false)}>
               Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para Criar Nova Categoria */}
+      <Dialog open={showNewCategoryDialog} onOpenChange={setShowNewCategoryDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Criar Nova Categoria</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="nova-categoria">Nome da Categoria</Label>
+              <Input
+                id="nova-categoria"
+                value={novaCategoria}
+                onChange={(e) => setNovaCategoria(e.target.value)}
+                placeholder="Digite o nome da categoria"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowNewCategoryDialog(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => {
+                if (novaCategoria.trim()) {
+                  setCategorias((prev) => [...prev, novaCategoria.trim()]);
+                  setFormData({ ...formData, categoria: novaCategoria.trim() });
+                  setNovaCategoria("");
+                  setShowNewCategoryDialog(false);
+                }
+              }}
+              disabled={!novaCategoria.trim()}
+              className="bg-[#FFD300] text-[#0C0C0C] hover:bg-[#E6BD00]"
+            >
+              Criar Categoria
             </Button>
           </DialogFooter>
         </DialogContent>

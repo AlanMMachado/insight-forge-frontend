@@ -3,7 +3,8 @@ export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://loca
 
 // Endpoints de autenticação
 export const AUTH_ENDPOINTS = {
-  login: '/auth/login',
+  login: '/api/auth/login',
+  register: '/api/auth/register',
 } as const
 
 // Endpoints de produtos
@@ -38,12 +39,12 @@ export const MOVIMENTACOES_ENDPOINTS = {
 
 // Endpoints de usuários
 export const USUARIOS_ENDPOINTS = {
-  listar: '/usuarios',
-  buscarPorId: '/usuarios/buscarUsuario',
-  atualizar: '/usuarios/atualizarUsuario',
-  deletar: '/usuarios/deletarUsuario',
-  registrarUser: '/usuarios/registrarUser', // Endpoint público para registro de usuários
-  registrarAdmin: '/usuarios/registrarAdmin', // Endpoint para admin registrar usuários
+  listar: '/api/usuarios',
+  buscarPorId: '/api/usuarios/buscarUsuario',
+  atualizar: '/api/usuarios/atualizarUsuario',
+  deletar: '/api/usuarios/deletarUsuario',
+  registrarUser: '/api/usuarios/registrarUser', // Endpoint público para registro de usuários
+  registrarAdmin: '/api/usuarios/registrarAdmin', // Endpoint para admin registrar usuários
 } as const
 
 // Tipos para as entidades
@@ -81,327 +82,248 @@ export interface Movimentacao {
   dataCriacao?: string
 }
 
-// Funções de API
+// Funções de API agrupadas por tipo
 export class ApiService {
+  // ===== Utilitários internos =====
   private static getAuthHeaders(): HeadersInit {
-    const token = localStorage.getItem('token')
+    const token = localStorage.getItem('token');
     return {
       'Content-Type': 'application/json',
       ...(token && { Authorization: `Bearer ${token}` }),
-    }
+    };
   }
 
   private static async request<T>(
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
-    const url = `${API_BASE_URL}${endpoint}`
-    
+    const url = `${API_BASE_URL}${endpoint}`;
     const response = await fetch(url, {
       headers: {
         ...this.getAuthHeaders(),
         ...options.headers,
       },
       ...options,
-    })
-
+    });
     if (!response.ok) {
-      const errorText = await response.text()
-      throw new Error(errorText || `HTTP error! status: ${response.status}`)
+      const errorText = await response.text();
+      throw new Error(errorText || `HTTP error! status: ${response.status}`);
     }
-
-    // Para respostas de texto simples
     if (response.headers.get('content-type')?.includes('text/plain')) {
-      return (await response.text()) as T
+      return (await response.text()) as T;
     }
-
-    // Para respostas JSON
     if (response.headers.get('content-type')?.includes('application/json')) {
-      return await response.json()
+      return await response.json();
     }
-
-    // Para arquivos binários
-    return response as T
+    return response as T;
   }
 
-  // Produtos
-  static async importarProdutos(file: File): Promise<string> {
-    const formData = new FormData()
-    formData.append('file', file)
-    const token = localStorage.getItem('token')
+  // ===== Autenticação =====
+  static async login(email: string, password: string): Promise<{ token: string }> {
+    return this.request<{ token: string }>(AUTH_ENDPOINTS.login, {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
+  }
 
+  // ===== Produtos =====
+  static async listarProdutos(): Promise<Produto[]> {
+    return this.request<Produto[]>(PRODUTOS_ENDPOINTS.listar);
+  }
+  static async criarProduto(produto: Produto): Promise<Produto> {
+    return this.request<Produto>(PRODUTOS_ENDPOINTS.criar, {
+      method: 'POST',
+      body: JSON.stringify(produto),
+    });
+  }
+  static async buscarProdutoPorId(id: number): Promise<Produto> {
+    return this.request<Produto>(`${PRODUTOS_ENDPOINTS.buscarPorId}/${id}`);
+  }
+  static async buscarProdutoPorCategoria(categoria: string): Promise<Produto[]> {
+    return this.request<Produto[]>(`${PRODUTOS_ENDPOINTS.buscarPorCategoria}/${categoria}?categoria=${categoria}`);
+  }
+  static async buscarProdutoPorNome(nome: string): Promise<Produto[]> {
+    return this.request<Produto[]>(`${PRODUTOS_ENDPOINTS.buscarPorNome}/${nome}?nome=${nome}`);
+  }
+  static async buscarProdutosAtivos(ativo: boolean): Promise<Produto[]> {
+    return this.request<Produto[]>(`${PRODUTOS_ENDPOINTS.buscarAtivos}?ativo=${ativo}`);
+  }
+  static async atualizarProduto(id: number, produto: Produto): Promise<Produto> {
+    return this.request<Produto>(`${PRODUTOS_ENDPOINTS.atualizar}/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(produto),
+    });
+  }
+  static async deletarProduto(id: number): Promise<void> {
+    return this.request<void>(`${PRODUTOS_ENDPOINTS.deletar}/${id}`, {
+      method: 'DELETE',
+    });
+  }
+  static async importarProdutos(file: File): Promise<string> {
+    const formData = new FormData();
+    formData.append('file', file);
+    const token = localStorage.getItem('token');
     const response = await fetch(`${API_BASE_URL}${PRODUTOS_ENDPOINTS.importar}`, {
       method: 'POST',
       headers: {
         ...(token && { Authorization: `Bearer ${token}` }),
       },
       body: formData,
-    })
-
+    });
     if (!response.ok) {
-      const errorText = await response.text()
-      throw new Error(errorText)
+      const errorText = await response.text();
+      throw new Error(errorText);
     }
-
-    return await response.text()
+    return await response.text();
   }
-
   static async exportarProdutos(): Promise<Blob> {
-    const token = localStorage.getItem('token')
+    const token = localStorage.getItem('token');
     const response = await fetch(`${API_BASE_URL}${PRODUTOS_ENDPOINTS.exportar}`, {
       headers: {
         ...(token && { Authorization: `Bearer ${token}` }),
       },
-    })
-    
+    });
     if (!response.ok) {
-      throw new Error('Erro ao exportar produtos')
+      throw new Error('Erro ao exportar produtos');
     }
-
-    return await response.blob()
+    return await response.blob();
+  }
+  static async listarCategorias(): Promise<string[]> {
+    const response = await fetch(`${API_BASE_URL}/api/produtos/listarCategorias`, {
+      headers: this.getAuthHeaders(),
+    });
+    if (!response.ok) {
+      throw new Error('Erro ao listar categorias');
+    }
+    return await response.json();
   }
 
-  static async listarProdutos(): Promise<Produto[]> {
-    return this.request<Produto[]>(PRODUTOS_ENDPOINTS.listar)
+  // ===== Movimentações =====
+  static async listarMovimentacoes(): Promise<Movimentacao[]> {
+    return this.request<Movimentacao[]>(MOVIMENTACOES_ENDPOINTS.listar);
   }
-
-  static async criarProduto(produto: Produto): Promise<Produto> {
-    return this.request<Produto>(PRODUTOS_ENDPOINTS.criar, {
+  static async criarMovimentacao(movimentacao: Movimentacao): Promise<Movimentacao> {
+    return this.request<Movimentacao>(MOVIMENTACOES_ENDPOINTS.criar, {
       method: 'POST',
-      body: JSON.stringify(produto),
-    })
+      body: JSON.stringify(movimentacao),
+    });
   }
-
-  static async buscarProdutoPorId(id: number): Promise<Produto> {
-    return this.request<Produto>(`${PRODUTOS_ENDPOINTS.buscarPorId}/${id}`)
+  static async buscarMovimentacaoPorId(id: number): Promise<Movimentacao> {
+    return this.request<Movimentacao>(`${MOVIMENTACOES_ENDPOINTS.buscarPorId}/${id}`);
   }
-
-  static async buscarProdutoPorCategoria(categoria: string): Promise<Produto[]> {
-    return this.request<Produto[]>(`${PRODUTOS_ENDPOINTS.buscarPorCategoria}/${categoria}?categoria=${categoria}`)
+  static async filtrarPorTipo(tipo: 'COMPRA' | 'VENDA'): Promise<Movimentacao[]> {
+    return this.request<Movimentacao[]>(`${MOVIMENTACOES_ENDPOINTS.filtrarPorTipo}?tipo=${tipo}`);
   }
-
-  static async buscarProdutoPorNome(nome: string): Promise<Produto[]> {
-    return this.request<Produto[]>(`${PRODUTOS_ENDPOINTS.buscarPorNome}/${nome}?nome=${nome}`)
+  static async filtrarPorData(dataInicio: string, dataFim: string): Promise<Movimentacao[]> {
+    return this.request<Movimentacao[]>(`${MOVIMENTACOES_ENDPOINTS.filtrarPorData}?dataInicio=${dataInicio}&dataFim=${dataFim}`);
   }
-
-  static async buscarProdutosAtivos(ativo: boolean): Promise<Produto[]> {
-    return this.request<Produto[]>(`${PRODUTOS_ENDPOINTS.buscarAtivos}?ativo=${ativo}`)
+  static async filtrarPorProduto(produtoId: number): Promise<Movimentacao[]> {
+    return this.request<Movimentacao[]>(`${MOVIMENTACOES_ENDPOINTS.filtrarPorProduto}?produtoId=${produtoId}`);
   }
-
-  static async atualizarProduto(id: number, produto: Produto): Promise<Produto> {
-    return this.request<Produto>(`${PRODUTOS_ENDPOINTS.atualizar}/${id}`, {
+  static async atualizarMovimentacao(id: number, movimentacao: Movimentacao): Promise<Movimentacao> {
+    return this.request<Movimentacao>(`${MOVIMENTACOES_ENDPOINTS.atualizar}/${id}`, {
       method: 'PUT',
-      body: JSON.stringify(produto),
-    })
+      body: JSON.stringify(movimentacao),
+    });
   }
-
-  static async deletarProduto(id: number): Promise<void> {
-    return this.request<void>(`${PRODUTOS_ENDPOINTS.deletar}/${id}`, {
+  static async deletarMovimentacao(id: number): Promise<void> {
+    return this.request<void>(`${MOVIMENTACOES_ENDPOINTS.deletar}/${id}`, {
       method: 'DELETE',
-    })
+    });
   }
-
-  // Movimentações
   static async importarMovimentacoes(file: File): Promise<string> {
-    const formData = new FormData()
-    formData.append('file', file)
-    const token = localStorage.getItem('token')
-
+    const formData = new FormData();
+    formData.append('file', file);
+    const token = localStorage.getItem('token');
     const response = await fetch(`${API_BASE_URL}${MOVIMENTACOES_ENDPOINTS.importar}`, {
       method: 'POST',
       headers: {
         ...(token && { Authorization: `Bearer ${token}` }),
       },
       body: formData,
-    })
-
+    });
     if (!response.ok) {
-      const errorText = await response.text()
-      throw new Error(errorText)
+      const errorText = await response.text();
+      throw new Error(errorText);
     }
-
-    return await response.text()
+    return await response.text();
   }
-
   static async exportarMovimentacoesPorProduto(produtoId: number): Promise<Blob> {
-    const token = localStorage.getItem('token')
-    const response = await fetch(
-      `${API_BASE_URL}${MOVIMENTACOES_ENDPOINTS.exportarPorProduto}?produtoId=${produtoId}`,
-      {
-        headers: {
-          ...(token && { Authorization: `Bearer ${token}` }),
-        },
-      }
-    )
-    
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_BASE_URL}${MOVIMENTACOES_ENDPOINTS.exportarPorProduto}?produtoId=${produtoId}`, {
+      headers: {
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+    });
     if (!response.ok) {
-      throw new Error('Erro ao exportar movimentações por produto')
+      throw new Error('Erro ao exportar movimentações por produto');
     }
-
-    return await response.blob()
+    return await response.blob();
   }
-
   static async exportarMovimentacoesPorTipo(tipo: 'COMPRA' | 'VENDA'): Promise<Blob> {
-    const token = localStorage.getItem('token')
-    const response = await fetch(
-      `${API_BASE_URL}${MOVIMENTACOES_ENDPOINTS.exportarPorTipo}?tipo=${tipo}`,
-      {
-        headers: {
-          ...(token && { Authorization: `Bearer ${token}` }),
-        },
-      }
-    )
-    
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_BASE_URL}${MOVIMENTACOES_ENDPOINTS.exportarPorTipo}?tipo=${tipo}`, {
+      headers: {
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+    });
     if (!response.ok) {
-      throw new Error('Erro ao exportar movimentações por tipo')
+      throw new Error('Erro ao exportar movimentações por tipo');
     }
-
-    return await response.blob()
+    return await response.blob();
   }
-
   static async exportarMovimentacoesPorData(dataInicio: string, dataFim: string): Promise<Blob> {
-    const token = localStorage.getItem('token')
-    const response = await fetch(
-      `${API_BASE_URL}${MOVIMENTACOES_ENDPOINTS.exportarPorData}?dataInicio=${dataInicio}&dataFim=${dataFim}`,
-      {
-        headers: {
-          ...(token && { Authorization: `Bearer ${token}` }),
-        },
-      }
-    )
-    
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_BASE_URL}${MOVIMENTACOES_ENDPOINTS.exportarPorData}?dataInicio=${dataInicio}&dataFim=${dataFim}`, {
+      headers: {
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+    });
     if (!response.ok) {
-      throw new Error('Erro ao exportar movimentações por data')
+      throw new Error('Erro ao exportar movimentações por data');
     }
-
-    return await response.blob()
-
-    return await response.blob()
+    return await response.blob();
   }
 
-  static async listarMovimentacoes(): Promise<Movimentacao[]> {
-    return this.request<Movimentacao[]>(MOVIMENTACOES_ENDPOINTS.listar)
-  }
-
-  static async criarMovimentacao(movimentacao: Movimentacao): Promise<Movimentacao> {
-    return this.request<Movimentacao>(MOVIMENTACOES_ENDPOINTS.criar, {
-      method: 'POST',
-      body: JSON.stringify(movimentacao),
-    })
-  }
-
-  static async buscarMovimentacaoPorId(id: number): Promise<Movimentacao> {
-    return this.request<Movimentacao>(`${MOVIMENTACOES_ENDPOINTS.buscarPorId}/${id}`)
-  }
-
-  static async filtrarPorTipo(tipo: 'COMPRA' | 'VENDA'): Promise<Movimentacao[]> {
-    return this.request<Movimentacao[]>(`${MOVIMENTACOES_ENDPOINTS.filtrarPorTipo}?tipo=${tipo}`)
-  }
-
-  static async filtrarPorData(dataInicio: string, dataFim: string): Promise<Movimentacao[]> {
-    return this.request<Movimentacao[]>(
-      `${MOVIMENTACOES_ENDPOINTS.filtrarPorData}?dataInicio=${dataInicio}&dataFim=${dataFim}`
-    )
-  }
-
-  static async filtrarPorProduto(produtoId: number): Promise<Movimentacao[]> {
-    return this.request<Movimentacao[]>(
-      `${MOVIMENTACOES_ENDPOINTS.filtrarPorProduto}?produtoId=${produtoId}`
-    )
-  }
-
-  static async atualizarMovimentacao(id: number, movimentacao: Movimentacao): Promise<Movimentacao> {
-    return this.request<Movimentacao>(`${MOVIMENTACOES_ENDPOINTS.atualizar}/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(movimentacao),
-    })
-  }
-
-  static async deletarMovimentacao(id: number): Promise<void> {
-    return this.request<void>(`${MOVIMENTACOES_ENDPOINTS.deletar}/${id}`, {
-      method: 'DELETE',
-    })
-  }
-
-  // Usuários
+  // ===== Usuários =====
   static async listarUsuarios(): Promise<Usuario[]> {
-    return this.request<Usuario[]>(USUARIOS_ENDPOINTS.listar)
+    return this.request<Usuario[]>(USUARIOS_ENDPOINTS.listar);
   }
-
   static async buscarUsuarioPorId(id: number): Promise<Usuario> {
-    return this.request<Usuario>(`${USUARIOS_ENDPOINTS.buscarPorId}/${id}`)
+    return this.request<Usuario>(`${USUARIOS_ENDPOINTS.buscarPorId}/${id}`);
   }
-
   static async buscarUsuarioPorNome(nome: string): Promise<Usuario[]> {
-    // Filtragem do lado cliente já que não há endpoint específico para busca por nome
-    const usuarios = await this.listarUsuarios()
-    return usuarios.filter(usuario => 
-      usuario.nome.toLowerCase().includes(nome.toLowerCase())
-    )
+    const usuarios = await this.listarUsuarios();
+    return usuarios.filter(usuario => usuario.nome.toLowerCase().includes(nome.toLowerCase()));
   }
-
-  static async criarUsuario(usuario: { nome: string; email: string; password: string; role?: 'USER' | 'ADMIN' }): Promise<{
-    message: string;
-    id: number;
-    createdAt: string;
-  }> {
-    // Se tem role definido como ADMIN, usa o endpoint de admin, caso contrário usa o endpoint público
-    const endpoint = usuario.role === 'ADMIN' 
-      ? USUARIOS_ENDPOINTS.registrarAdmin 
-      : USUARIOS_ENDPOINTS.registrarUser;
-    
-    return this.request<{
-      message: string;
-      id: number;
-      createdAt: string;
-    }>(endpoint, {
+  static async criarUsuario(usuario: { nome: string; email: string; password: string; role?: 'USER' | 'ADMIN' }): Promise<{ message: string; id: number; createdAt: string; }> {
+    const endpoint = usuario.role === 'ADMIN' ? USUARIOS_ENDPOINTS.registrarAdmin : USUARIOS_ENDPOINTS.registrarUser;
+    return this.request<{ message: string; id: number; createdAt: string; }>(endpoint, {
       method: 'POST',
       body: JSON.stringify(usuario),
-    })
+    });
   }
-
-  // Função específica para registrar usuário público (sempre USER)
-  static async registrarUsuarioPublico(usuario: { nome: string; email: string; password: string }): Promise<{
-    message: string;
-    id: number;
-    createdAt: string;
-  }> {
-    return this.request<{
-      message: string;
-      id: number;
-      createdAt: string;
-    }>(USUARIOS_ENDPOINTS.registrarUser, {
+  static async registrarUsuarioPublico(usuario: { nome: string; email: string; password: string }): Promise<{ message: string; id: number; createdAt: string; }> {
+    return this.request<{ message: string; id: number; createdAt: string; }>(USUARIOS_ENDPOINTS.registrarUser, {
       method: 'POST',
       body: JSON.stringify(usuario),
-    })
+    });
   }
-
-  // Função específica para admin registrar usuário (pode ser USER ou ADMIN)
-  static async registrarUsuarioPorAdmin(usuario: { nome: string; email: string; password: string; role: 'USER' | 'ADMIN' }): Promise<{
-    message: string;
-    id: number;
-    createdAt: string;
-  }> {
-    return this.request<{
-      message: string;
-      id: number;
-      createdAt: string;
-    }>(USUARIOS_ENDPOINTS.registrarAdmin, {
+  static async registrarUsuarioPorAdmin(usuario: { nome: string; email: string; password: string; role: 'USER' | 'ADMIN' }): Promise<{ message: string; id: number; createdAt: string; }> {
+    return this.request<{ message: string; id: number; createdAt: string; }>(USUARIOS_ENDPOINTS.registrarAdmin, {
       method: 'POST',
       body: JSON.stringify(usuario),
-    })
+    });
   }
-
   static async atualizarUsuario(id: number, usuario: Omit<Usuario, "id" | "dataCriacao">): Promise<Usuario> {
     return this.request<Usuario>(`${USUARIOS_ENDPOINTS.atualizar}/${id}`, {
       method: 'PUT',
       body: JSON.stringify(usuario),
-    })
+    });
   }
-
   static async excluirUsuario(id: number): Promise<void> {
     return this.request<void>(`${USUARIOS_ENDPOINTS.deletar}/${id}`, {
       method: 'DELETE',
-    })
+    });
   }
 }

@@ -83,7 +83,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const login = async (email: string, password: string): Promise<void> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -97,22 +97,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
 
       const data = await response.json()
-      const { token } = data
+      const { token, user } = data
 
       // Decodificar token para extrair dados do usuário
-      const userData = decodeToken(token)
+      const userData = user || decodeToken(token)
       if (!userData) {
         throw new Error('Token inválido')
       }
 
-      // Salvar no estado e localStorage
       setToken(token)
       setUser(userData)
       localStorage.setItem('token', token)
       localStorage.setItem('user', JSON.stringify(userData))
-      // Salvar token no cookie também para o middleware
-      document.cookie = `token=${token}; path=/; max-age=${7 * 24 * 60 * 60}` // 7 dias
-
+      document.cookie = `token=${token}; path=/; max-age=${7 * 24 * 60 * 60}`
       router.push('/dashboard')
     } catch (error) {
       console.error('Erro no login:', error)
@@ -123,11 +120,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const register = async (
     nome: string, 
     email: string, 
-    password: string, 
-    role: string = 'USER'
+    password: string
   ): Promise<void> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/usuarios/registrarUser`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -140,7 +136,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         throw new Error(errorText || 'Erro ao criar conta')
       }
 
-      // Após registro bem-sucedido, redireciona para login
+      // Não precisa tratar role, resposta já vem no formato novo
       router.push('/login')
     } catch (error) {
       console.error('Erro no cadastro:', error)
