@@ -16,6 +16,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Package, Plus, Search, Edit, Trash2, Eye, Download, Filter, AlertTriangle, CheckCircle, Upload } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { ApiService, Produto } from "@/lib/api"
+import { CATEGORIAS_PRODUTOS } from "@/lib/categorias"
 import AuthenticatedLayout from "@/components/authenticated-layout"
 
 export default function ProdutosPage() {
@@ -23,7 +24,6 @@ export default function ProdutosPage() {
   const [produtos, setProdutos] = useState<Produto[]>([])
   const [loading, setLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
-  const [searchType, setSearchType] = useState<'nome' | 'categoria'>('nome')
   const [filterCategoria, setFilterCategoria] = useState("")
   const [filterAtivo, setFilterAtivo] = useState<boolean | null>(null)
   // Novo estado para controlar a visibilidade dos resultados
@@ -36,6 +36,7 @@ export default function ProdutosPage() {
     nome: "",
     categoria: "",
     preco: 0,
+    custo: null, // Novo campo custo
     quantidadeEstoque: 0,
     ativo: true,
     descricao: ""
@@ -77,14 +78,7 @@ export default function ProdutosPage() {
 
     try {
       setLoading(true)
-      let data: Produto[] = []
-      
-      if (searchType === 'nome') {
-        data = await ApiService.buscarProdutoPorNome(searchTerm)
-      } else {
-        data = await ApiService.buscarProdutoPorCategoria(searchTerm)
-      }
-      
+      const data = await ApiService.buscarProdutoPorNome(searchTerm)
       setProdutos(Array.isArray(data) ? data : [data])
       setHasSearched(true)
     } catch (error) {
@@ -188,6 +182,7 @@ export default function ProdutosPage() {
       nome: "",
       categoria: "",
       preco: 0,
+      custo: null, // Reseta custo como null
       quantidadeEstoque: 0,
       ativo: true,
       descricao: ""
@@ -201,6 +196,7 @@ export default function ProdutosPage() {
       nome: produto.nome,
       categoria: produto.categoria || "",
       preco: produto.preco || 0,
+      custo: produto.custo || null, // Inclui custo no formulário de edição
       quantidadeEstoque: produto.quantidadeEstoque || 0,
       ativo: produto.ativo ?? true,
       descricao: produto.descricao || ""
@@ -280,28 +276,14 @@ export default function ProdutosPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-end">
-            {/* Tipo de busca */}
-            <div className="lg:col-span-3">
-              <Label htmlFor="searchType">Buscar por</Label>
-              <Select value={searchType} onValueChange={(value: 'nome' | 'categoria') => setSearchType(value)}>
-                <SelectTrigger className="h-10">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="nome">Nome do Produto</SelectItem>
-                  <SelectItem value="categoria">Categoria</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
             {/* Campo de busca */}
             <div className="lg:col-span-5">
-              <Label htmlFor="search">Termo de busca</Label>
+              <Label htmlFor="search">Nome do Produto</Label>
               <div className="relative">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="search"
-                  placeholder={searchType === 'nome' ? "Digite o nome do produto..." : "Digite a categoria..."}
+                  placeholder="Digite o nome do produto..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-8 h-10"
@@ -311,7 +293,7 @@ export default function ProdutosPage() {
             </div>
             
             {/* Botões de ação */}
-            <div className="lg:col-span-4 flex flex-col sm:flex-row gap-2 items-stretch sm:items-end">
+            <div className="lg:col-span-7 flex flex-col sm:flex-row gap-2 items-stretch sm:items-end">
               <Button
                 onClick={() => {
                   setHasSearched(true)
@@ -351,11 +333,8 @@ export default function ProdutosPage() {
           <Button 
             variant="outline" 
             onClick={() => {
-              setHasSearched(false)
-              setSearchTerm("")
               setFilterCategoria("")
               setFilterAtivo(null)
-              setProdutos([])
             }}
           >
             <Filter className="w-4 h-4 mr-2" />
@@ -433,80 +412,127 @@ export default function ProdutosPage() {
                       <TableHead className="min-w-[150px]">Nome</TableHead>
                       <TableHead className="hidden sm:table-cell">Categoria</TableHead>
                       <TableHead className="hidden md:table-cell">Preço</TableHead>
+                      <TableHead className="hidden lg:table-cell">Custo</TableHead>
+                      <TableHead className="hidden lg:table-cell">Margem</TableHead>
                       <TableHead className="text-center">Estoque</TableHead>
                       <TableHead className="text-center">Status</TableHead>
                       <TableHead className="text-center min-w-[120px]">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredProdutos.map((produto) => (
-                      <TableRow key={produto.id}>
-                        <TableCell className="font-medium">
-                          <div className="space-y-1">
-                            <div className="font-medium text-sm">{produto.nome}</div>
-                            <div className="text-xs text-gray-500 sm:hidden">
-                              {produto.categoria || "Sem categoria"}
+                    {filteredProdutos.map((produto) => {
+                      // Calcular margem de lucro se custo e preço estiverem definidos
+                      const calcularMargem = () => {
+                        if (produto.preco && produto.custo && produto.custo > 0) {
+                          const margem = ((produto.preco - produto.custo) / produto.preco) * 100;
+                          return margem.toFixed(1) + '%';
+                        }
+                        return '-';
+                      };
+
+                      const margem = calcularMargem();
+                      const margemNumeric = produto.preco && produto.custo && produto.custo > 0 
+                        ? ((produto.preco - produto.custo) / produto.preco) * 100 
+                        : null;
+
+                      return (
+                        <TableRow key={produto.id}>
+                          <TableCell className="font-medium">
+                            <div className="space-y-1">
+                              <div className="font-medium text-sm">{produto.nome}</div>
+                              <div className="text-xs text-gray-500 sm:hidden">
+                                {produto.categoria || "Sem categoria"}
+                              </div>
+                              <div className="text-xs text-gray-500 md:hidden">
+                                {produto.preco ? `R$ ${produto.preco.toFixed(2)}` : "Sem preço"}
+                              </div>
+                              <div className="text-xs text-gray-500 lg:hidden">
+                                Custo: {produto.custo ? `R$ ${produto.custo.toFixed(2)}` : "Não informado"}
+                              </div>
                             </div>
-                            <div className="text-xs text-gray-500 md:hidden">
-                              {produto.preco ? `R$ ${produto.preco.toFixed(2)}` : "Sem preço"}
+                          </TableCell>
+                          <TableCell className="hidden sm:table-cell">
+                            {produto.categoria || "-"}
+                          </TableCell>
+                          <TableCell className="hidden md:table-cell">
+                            {produto.preco ? `R$ ${produto.preco.toFixed(2)}` : "-"}
+                          </TableCell>
+                          <TableCell className="hidden lg:table-cell">
+                            {produto.custo ? `R$ ${produto.custo.toFixed(2)}` : (
+                              <span className="text-gray-400 text-sm">Não informado</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="hidden lg:table-cell">
+                            <div className="flex items-center gap-2">
+                              <span className={`font-medium ${
+                                margemNumeric === null ? 'text-gray-400' :
+                                margemNumeric >= 30 ? 'text-green-600' :
+                                margemNumeric >= 15 ? 'text-yellow-600' :
+                                'text-red-600'
+                              }`}>
+                                {margem}
+                              </span>
+                              {margemNumeric !== null && (
+                                <div
+                                  className={`w-2 h-2 rounded-full ${
+                                    margemNumeric >= 30 ? "bg-green-500" :
+                                    margemNumeric >= 15 ? "bg-yellow-500" :
+                                    "bg-red-500"
+                                  }`}
+                                />
+                              )}
                             </div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="hidden sm:table-cell">
-                          {produto.categoria || "-"}
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell">
-                          {produto.preco ? `R$ ${produto.preco.toFixed(2)}` : "-"}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <div className="flex items-center justify-center gap-2">
-                            <span className="font-medium">{produto.quantidadeEstoque || 0}</span>
-                            <div
-                              className={`w-2 h-2 rounded-full ${
-                                (produto.quantidadeEstoque || 0) < 20 
-                                  ? "bg-red-500" 
-                                  : (produto.quantidadeEstoque || 0) > 50 
-                                  ? "bg-green-500" 
-                                  : "bg-yellow-500"
-                              }`}
-                            />
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Badge variant={produto.ativo ? "default" : "secondary"} className="text-xs">
-                            {produto.ativo ? "Ativo" : "Inativo"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex justify-center space-x-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => openViewDialog(produto)}
-                              className="h-8 w-8 p-0"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => openEditDialog(produto)}
-                              className="h-8 w-8 p-0"
-                            >
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => produto.id && handleDeleteProduto(produto.id)}
-                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <div className="flex items-center justify-center gap-2">
+                              <span className="font-medium">{produto.quantidadeEstoque || 0}</span>
+                              <div
+                                className={`w-2 h-2 rounded-full ${
+                                  (produto.quantidadeEstoque || 0) < 20 
+                                    ? "bg-red-500" 
+                                    : (produto.quantidadeEstoque || 0) > 50 
+                                    ? "bg-green-500" 
+                                    : "bg-yellow-500"
+                                }`}
+                              />
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Badge variant={produto.ativo ? "default" : "secondary"} className="text-xs">
+                              {produto.ativo ? "Ativo" : "Inativo"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex justify-center space-x-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => openViewDialog(produto)}
+                                className="h-8 w-8 p-0"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => openEditDialog(produto)}
+                                className="h-8 w-8 p-0"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => produto.id && handleDeleteProduto(produto.id)}
+                                className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>
@@ -518,7 +544,10 @@ export default function ProdutosPage() {
       {/* Dialog para Criar Produto */}
       <Dialog open={showCreateDialog} onOpenChange={(open) => {
         setShowCreateDialog(open);
-        if (open) loadCategorias(); // Carregar categorias ao abrir o diálogo
+        if (open) {
+          resetForm(); // Garantir formulário limpo ao abrir o diálogo de criação
+          loadCategorias(); // Carregar categorias ao abrir o diálogo
+        }
       }}>
         <DialogContent className="max-w-md"> {/* Reduzido para max-w-md */}
           <DialogHeader>
@@ -545,23 +574,22 @@ export default function ProdutosPage() {
                 <Select
                   value={formData.categoria}
                   onValueChange={(value) => setFormData({ ...formData, categoria: value })}
-                  disabled={categorias.length === 0}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={categorias.length === 0 ? "Nenhuma categoria cadastrada" : "Selecione uma categoria"} />
+                    <SelectValue placeholder="Selecione uma categoria" />
                   </SelectTrigger>
                   <SelectContent>
-                    {categorias.length === 0 ? (
-                      <div className="p-2 text-sm text-gray-500">
-                        Nenhuma categoria cadastrada. Crie uma nova.
-                      </div>
-                    ) : (
-                      categorias.map((categoria) => (
-                        <SelectItem key={categoria} value={categoria}>
-                          {categoria}
-                        </SelectItem>
-                      ))
-                    )}
+                    {CATEGORIAS_PRODUTOS.map((categoria) => (
+                      <SelectItem key={categoria.value} value={categoria.value}>
+                        {categoria.label}
+                      </SelectItem>
+                    ))}
+                    {/* Categorias personalizadas do usuário */}
+                    {categorias.filter(cat => !CATEGORIAS_PRODUTOS.some(predef => predef.value === cat)).map((categoria) => (
+                      <SelectItem key={categoria} value={categoria}>
+                        {categoria}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 <Button
@@ -581,12 +609,12 @@ export default function ProdutosPage() {
                   type="number"
                   step="0.01"
                   min="0"
-                  value={formData.preco || ""} // Exibe vazio ao invés de 0
+                  value={formData.preco === 0 ? "" : formData.preco || ""}
                   onChange={(e) => {
                     const value = parseFloat(e.target.value);
-                    setFormData({ ...formData, preco: isNaN(value) ? 0 : value }); // Define 0 se o valor for inválido
+                    setFormData({ ...formData, preco: isNaN(value) ? 0 : value });
                   }}
-                  placeholder="0.00"
+                  placeholder="0,00"
                 />
                 <Select
                   value={currency}
@@ -605,15 +633,39 @@ export default function ProdutosPage() {
             </div>
 
             <div>
+              <Label htmlFor="custo">Custo (Opcional)</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="custo"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={formData.custo === null || formData.custo === 0 ? "" : formData.custo || ""}
+                  onChange={(e) => {
+                    const value = e.target.value === "" ? null : parseFloat(e.target.value);
+                    setFormData({ ...formData, custo: value === null ? null : (isNaN(value as number) ? null : value) });
+                  }}
+                  placeholder="0,00"
+                />
+                <span className="text-sm text-gray-500 min-w-[60px]">
+                  {currency}
+                </span>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Campo opcional. Usado para calcular margem de lucro.
+              </p>
+            </div>
+
+            <div>
               <Label htmlFor="estoque">Quantidade em Estoque</Label>
               <Input
                 id="estoque"
                 type="number"
                 min="0"
-                value={formData.quantidadeEstoque || ""} // Exibe vazio ao invés de 0
+                value={formData.quantidadeEstoque === 0 ? "" : formData.quantidadeEstoque || ""}
                 onChange={(e) => {
                   const value = parseInt(e.target.value);
-                  setFormData({ ...formData, quantidadeEstoque: isNaN(value) ? 0 : value }); // Define 0 se o valor for inválido
+                  setFormData({ ...formData, quantidadeEstoque: isNaN(value) ? 0 : value });
                 }}
                 placeholder="0"
               />
@@ -737,6 +789,30 @@ export default function ProdutosPage() {
             </div>
 
             <div>
+              <Label htmlFor="edit-custo">Custo (Opcional)</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="edit-custo"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={formData.custo || ""} // Exibe vazio se null
+                  onChange={(e) => {
+                    const value = e.target.value === "" ? null : parseFloat(e.target.value);
+                    setFormData({ ...formData, custo: value === null ? null : (isNaN(value as number) ? null : value) });
+                  }}
+                  placeholder="0.00"
+                />
+                <span className="text-sm text-gray-500 min-w-[60px]">
+                  {currency}
+                </span>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Campo opcional. Usado para calcular margem de lucro.
+              </p>
+            </div>
+
+            <div>
               <Label htmlFor="edit-estoque">Quantidade em Estoque</Label>
               <Input
                 id="edit-estoque"
@@ -815,6 +891,39 @@ export default function ProdutosPage() {
                     {selectedProduto.preco ? `R$ ${selectedProduto.preco.toFixed(2)}` : "-"}
                   </p>
                 </div>
+                
+                <div>
+                  <Label className="text-sm font-medium text-gray-700">Custo</Label>
+                  <p className="text-sm text-gray-900">
+                    {selectedProduto.custo ? `R$ ${selectedProduto.custo.toFixed(2)}` : (
+                      <span className="text-gray-500">Não informado</span>
+                    )}
+                  </p>
+                </div>
+
+                {selectedProduto.preco && selectedProduto.custo && (
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700">Margem de Lucro</Label>
+                    <div className="flex items-center gap-2">
+                      <p className={`text-sm font-medium ${
+                        ((selectedProduto.preco - selectedProduto.custo) / selectedProduto.preco) * 100 >= 30 ? 'text-green-600' :
+                        ((selectedProduto.preco - selectedProduto.custo) / selectedProduto.preco) * 100 >= 15 ? 'text-yellow-600' :
+                        'text-red-600'
+                      }`}>
+                        {(((selectedProduto.preco - selectedProduto.custo) / selectedProduto.preco) * 100).toFixed(1)}%
+                      </p>
+                      <Badge variant={
+                        ((selectedProduto.preco - selectedProduto.custo) / selectedProduto.preco) * 100 >= 30 ? "default" :
+                        ((selectedProduto.preco - selectedProduto.custo) / selectedProduto.preco) * 100 >= 15 ? "secondary" :
+                        "destructive"
+                      } className="text-xs">
+                        {((selectedProduto.preco - selectedProduto.custo) / selectedProduto.preco) * 100 >= 30 ? "Boa" :
+                         ((selectedProduto.preco - selectedProduto.custo) / selectedProduto.preco) * 100 >= 15 ? "Média" :
+                         "Baixa"}
+                      </Badge>
+                    </div>
+                  </div>
+                )}
                 
                 <div>
                   <Label className="text-sm font-medium text-gray-700">Quantidade em Estoque</Label>

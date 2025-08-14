@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { toast } from '@/hooks/use-toast'
 import { useAuth } from '@/contexts/auth-context'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -44,18 +45,25 @@ export default function RegisterPage() {
 
     try {
       await register(nome, email, password, role)
-      setSuccess('Conta criada com sucesso! Redirecionando para o login...')
-      
+
       // Limpar formulário
       setNome('')
       setEmail('')
       setPassword('')
       setConfirmPassword('')
-      
-      // Aguardar um pouco antes de redirecionar
-      setTimeout(() => {
-        // O redirecionamento já é feito no contexto
-      }, 1500)
+
+      toast({
+        title: 'Registro realizado com sucesso!',
+        description: 'Sua conta foi criada. Clique para voltar ao login.',
+        action: (
+          <Link href="/login">
+            <Button className="bg-green-600 hover:bg-green-700 text-white mt-2" size="sm">
+              Voltar para login
+            </Button>
+          </Link>
+        ),
+        variant: 'default',
+      })
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Erro ao criar conta')
     } finally {
@@ -88,13 +96,7 @@ export default function RegisterPage() {
               </Alert>
             )}
 
-            {success && (
-              <Alert className="border-green-200 bg-green-50">
-                <AlertDescription className="text-green-600">
-                  {success}
-                </AlertDescription>
-              </Alert>
-            )}
+            {/* Toast de sucesso será exibido no canto inferior direito, igual à interface de usuários */}
 
             <div className="space-y-2">
               <Label htmlFor="nome" className="text-[#000000]">Nome Completo</Label>

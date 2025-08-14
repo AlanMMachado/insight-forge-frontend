@@ -1,3 +1,8 @@
+// Utilitários
+const getToken = (): string | null => {
+  return typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+};
+
 // Configuração da API
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080'
 
@@ -62,6 +67,7 @@ export interface Produto {
   nome: string
   categoria?: string
   preco?: number
+  custo?: number | null 
   quantidadeEstoque?: number
   ativo?: boolean
   descricao?: string
@@ -74,7 +80,7 @@ export interface Movimentacao {
   produto: {
     id: number
   }
-  tipoMovimentacao: 'COMPRA' | 'VENDA'
+  tipoMovimentacao: string // Mais flexível para aceitar "Compra"/"Venda" e "COMPRA"/"VENDA"
   quantidadeMovimentada: number
   dataMovimentacao: string
   motivo?: string
@@ -86,7 +92,7 @@ export interface Movimentacao {
 export class ApiService {
   // ===== Utilitários internos =====
   private static getAuthHeaders(): HeadersInit {
-    const token = localStorage.getItem('token');
+    const token = getToken();
     return {
       'Content-Type': 'application/json',
       ...(token && { Authorization: `Bearer ${token}` }),
@@ -159,10 +165,10 @@ export class ApiService {
       method: 'DELETE',
     });
   }
-  static async importarProdutos(file: File): Promise<string> {
+  static async importarProdutos(file: File): Promise<import('@/types/import').ImportProdutosResponse> {
     const formData = new FormData();
     formData.append('file', file);
-    const token = localStorage.getItem('token');
+    const token = getToken();
     const response = await fetch(`${API_BASE_URL}${PRODUTOS_ENDPOINTS.importar}`, {
       method: 'POST',
       headers: {
@@ -174,10 +180,22 @@ export class ApiService {
       const errorText = await response.text();
       throw new Error(errorText);
     }
-    return await response.text();
+    
+    // Tentar parsear como JSON primeiro, se falhar, retornar como string (compatibilidade)
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      return await response.json();
+    } else {
+      // Compatibilidade com resposta antiga (string)
+      const message = await response.text();
+      return {
+        produtosImportados: 0,
+        mensagem: message
+      };
+    }
   }
   static async exportarProdutos(): Promise<Blob> {
-    const token = localStorage.getItem('token');
+    const token = getToken();
     const response = await fetch(`${API_BASE_URL}${PRODUTOS_ENDPOINTS.exportar}`, {
       headers: {
         ...(token && { Authorization: `Bearer ${token}` }),
@@ -231,10 +249,10 @@ export class ApiService {
       method: 'DELETE',
     });
   }
-  static async importarMovimentacoes(file: File): Promise<string> {
+  static async importarMovimentacoes(file: File): Promise<import('@/types/import').ImportMovimentacoesResponse> {
     const formData = new FormData();
     formData.append('file', file);
-    const token = localStorage.getItem('token');
+    const token = getToken();
     const response = await fetch(`${API_BASE_URL}${MOVIMENTACOES_ENDPOINTS.importar}`, {
       method: 'POST',
       headers: {
@@ -246,10 +264,24 @@ export class ApiService {
       const errorText = await response.text();
       throw new Error(errorText);
     }
-    return await response.text();
+    
+    // Tentar parsear como JSON primeiro, se falhar, retornar como string (compatibilidade)
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      return await response.json();
+    } else {
+      // Compatibilidade com resposta antiga (string)
+      const message = await response.text();
+      return {
+        movimentacoesImportadas: 0,
+        movimentacoesIgnoradas: 0,
+        mensagem: message,
+        produtosNaoEncontrados: []
+      };
+    }
   }
   static async exportarMovimentacoesPorProduto(produtoId: number): Promise<Blob> {
-    const token = localStorage.getItem('token');
+    const token = getToken();
     const response = await fetch(`${API_BASE_URL}${MOVIMENTACOES_ENDPOINTS.exportarPorProduto}?produtoId=${produtoId}`, {
       headers: {
         ...(token && { Authorization: `Bearer ${token}` }),
@@ -261,7 +293,7 @@ export class ApiService {
     return await response.blob();
   }
   static async exportarMovimentacoesPorTipo(tipo: 'COMPRA' | 'VENDA'): Promise<Blob> {
-    const token = localStorage.getItem('token');
+    const token = getToken();
     const response = await fetch(`${API_BASE_URL}${MOVIMENTACOES_ENDPOINTS.exportarPorTipo}?tipo=${tipo}`, {
       headers: {
         ...(token && { Authorization: `Bearer ${token}` }),
@@ -273,7 +305,7 @@ export class ApiService {
     return await response.blob();
   }
   static async exportarMovimentacoesPorData(dataInicio: string, dataFim: string): Promise<Blob> {
-    const token = localStorage.getItem('token');
+    const token = getToken();
     const response = await fetch(`${API_BASE_URL}${MOVIMENTACOES_ENDPOINTS.exportarPorData}?dataInicio=${dataInicio}&dataFim=${dataFim}`, {
       headers: {
         ...(token && { Authorization: `Bearer ${token}` }),
@@ -309,8 +341,8 @@ export class ApiService {
       body: JSON.stringify(usuario),
     });
   }
-  static async registrarUsuarioPorAdmin(usuario: { nome: string; email: string; password: string; role: 'USER' | 'ADMIN' }): Promise<{ message: string; id: number; createdAt: string; }> {
-    return this.request<{ message: string; id: number; createdAt: string; }>(USUARIOS_ENDPOINTS.registrarAdmin, {
+  static async registrarUsuarioPorAdmin(usuario: { nome: string; email: string; password: string; role: 'USER' | 'ADMIN' }): Promise<{ message: string; usuario: { id: number; createdAt: string; nome: string; email: string; role: string; } }> {
+    return this.request<{ message: string; usuario: { id: number; createdAt: string; nome: string; email: string; role: string; } }>(USUARIOS_ENDPOINTS.registrarAdmin, {
       method: 'POST',
       body: JSON.stringify(usuario),
     });

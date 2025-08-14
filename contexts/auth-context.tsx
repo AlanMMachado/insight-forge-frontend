@@ -30,12 +30,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null)
   const [token, setToken] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isClient, setIsClient] = useState(false)
   const router = useRouter()
 
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080'
 
+  // Verificar se estamos no cliente
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
+
   // Verificar se há token salvo ao carregar a aplicação
   useEffect(() => {
+    // Só executar quando estivermos no cliente
+    if (!isClient) {
+      return
+    }
+
     const savedToken = localStorage.getItem('token')
     const savedUser = localStorage.getItem('user')
 
@@ -53,7 +64,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
     }
     setIsLoading(false)
-  }, [])
+  }, [isClient])
 
   // Decodificar JWT para extrair dados do usuário
   const decodeToken = (token: string): User | null => {
@@ -107,9 +118,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       setToken(token)
       setUser(userData)
-      localStorage.setItem('token', token)
-      localStorage.setItem('user', JSON.stringify(userData))
-      document.cookie = `token=${token}; path=/; max-age=${7 * 24 * 60 * 60}`
+      
+      // Verificar se estamos no lado do cliente antes de acessar localStorage e document
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('token', token)
+        localStorage.setItem('user', JSON.stringify(userData))
+        document.cookie = `token=${token}; path=/; max-age=${7 * 24 * 60 * 60}`
+      }
+      
       router.push('/dashboard')
     } catch (error) {
       console.error('Erro no login:', error)
@@ -136,8 +152,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
         throw new Error(errorText || 'Erro ao criar conta')
       }
 
-      // Não precisa tratar role, resposta já vem no formato novo
-      router.push('/login')
     } catch (error) {
       console.error('Erro no cadastro:', error)
       throw error
@@ -147,10 +161,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const logout = (): void => {
     setToken(null)
     setUser(null)
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
-    // Remove token do cookie
-    document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+    
+    // Verificar se estamos no lado do cliente antes de acessar localStorage e document
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
+      // Remove token do cookie
+      document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+    }
+    
     router.push('/login')
   }
 

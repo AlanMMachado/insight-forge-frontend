@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from "react"
 import { SidebarProvider } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/app-sidebar"
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
@@ -23,10 +24,37 @@ interface AuthenticatedLayoutProps {
 
 export default function AuthenticatedLayout({ children, allowedRoles }: AuthenticatedLayoutProps) {
   const { user, logout } = useAuth()
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [mounted, setMounted] = useState(false)
+
+  // Carregar o estado da sidebar do localStorage na inicialização
+  useEffect(() => {
+    const savedState = localStorage.getItem('sidebar-open')
+    if (savedState !== null) {
+      setSidebarOpen(JSON.parse(savedState))
+    }
+    setMounted(true)
+  }, [])
+
+  // Salvar o estado da sidebar no localStorage quando mudar
+  useEffect(() => {
+    if (mounted) {
+      localStorage.setItem('sidebar-open', JSON.stringify(sidebarOpen))
+    }
+  }, [sidebarOpen, mounted])
+
+  // Não renderizar até que o estado seja carregado do localStorage
+  if (!mounted) {
+    return null
+  }
 
   return (
     <RequireAuth allowedRoles={allowedRoles}>
-      <SidebarProvider defaultOpen={true}>
+      <SidebarProvider 
+        defaultOpen={sidebarOpen}
+        open={sidebarOpen}
+        onOpenChange={setSidebarOpen}
+      >
         <AppSidebar />
         <SidebarInset>
           <header className="flex h-16 shrink-0 items-center gap-2 border-b border-[#CFCFCF] px-4 bg-white">

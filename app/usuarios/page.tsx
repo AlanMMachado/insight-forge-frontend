@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useAuth } from "@/contexts/auth-context"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Users, Search, Eye, Edit, Trash2, Plus } from "lucide-react"
+import { Users, Search, Eye, Edit, Trash2, Plus, Shield } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { ApiService, Usuario } from "@/lib/api"
 import { format, parseISO } from "date-fns"
@@ -20,6 +21,7 @@ import AuthenticatedLayout from "@/components/authenticated-layout"
 export default function UsuariosPage() {
   const { toast } = useToast()
   const { user, isLoading: authLoading } = useAuth()
+  const router = useRouter()
   
   const [usuarios, setUsuarios] = useState<Usuario[]>([])
   const [loading, setLoading] = useState(false)
@@ -46,6 +48,14 @@ export default function UsuariosPage() {
     role: "USER"
   })
   const [filterRole, setFilterRole] = useState<'USER' | 'ADMIN' | 'ALL'>('ALL')
+
+  // Verificar se o usuário tem permissão de acesso
+  useEffect(() => {
+    if (!authLoading && user && user.role !== 'ADMIN') {
+      router.push('/unauthorized')
+      return
+    }
+  }, [user, authLoading, router])
 
   // Carregar usuários
   const loadUsuarios = async () => {
@@ -118,7 +128,7 @@ export default function UsuariosPage() {
       const response = await ApiService.registrarUsuarioPorAdmin(formData)
       toast({
         title: "Usuário criado com sucesso!",
-        description: `ID: ${response.id} - Criado em: ${new Date(response.createdAt).toLocaleString('pt-BR')}`
+        description: `ID: ${response.usuario.id} - Criado em: ${new Date(response.usuario.createdAt).toLocaleString('pt-BR')}`
       })
       setShowCreateDialog(false)
       resetForm()
@@ -215,7 +225,7 @@ export default function UsuariosPage() {
     } as const
     
     const labels = {
-      ADMIN: "Administrador",
+      ADMIN: "Administrador", 
       USER: "Usuário"
     } as const
 
@@ -226,11 +236,12 @@ export default function UsuariosPage() {
     )
   }
 
-  const filterUsuarios = async () => {
+  const filterUsuarios = async (roleParam?: 'ALL' | 'USER' | 'ADMIN') => {
     try {
       setLoading(true)
       const data = await ApiService.listarUsuarios()
-      const filteredData = filterRole !== 'ALL' ? data.filter(usuario => usuario.role === filterRole) : data
+      const effectiveRole = roleParam ?? filterRole
+      const filteredData = effectiveRole !== 'ALL' ? data.filter(usuario => usuario.role === effectiveRole) : data
       setUsuarios(filteredData)
       setHasSearched(true)
     } catch (error) {
@@ -246,10 +257,15 @@ export default function UsuariosPage() {
 
   useEffect(() => {
     // Carregar usuários quando a página for acessada
-    if (!authLoading) {
+    if (!authLoading && user && user.role === 'ADMIN') {
       loadUsuarios()
     }
-  }, [authLoading])
+  }, [authLoading, user])
+
+  // Se não é admin, não renderizar nada (redirecionamento já foi feito)
+  if (!authLoading && user && user.role !== 'ADMIN') {
+    return null
+  }
 
   return (
     <AuthenticatedLayout>
@@ -260,8 +276,23 @@ export default function UsuariosPage() {
         </div>
       )}
 
-      {/* Conteúdo da página - acessível para todos os usuários autenticados */}
-      {!authLoading && (
+      {/* Verificação de acesso negado para usuários não-admin */}
+      {!authLoading && user && user.role !== 'ADMIN' && (
+        <div className="p-6 space-y-6">
+          <div className="flex items-center justify-center min-h-96">
+            <div className="text-center">
+              <Shield className="mx-auto h-12 w-12 text-red-500" />
+              <h3 className="mt-2 text-sm font-medium text-gray-900">Acesso Negado</h3>
+              <p className="mt-1 text-sm text-gray-500">
+                Você não tem permissão para acessar esta área.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Conteúdo da página - acessível apenas para administradores */}
+      {!authLoading && user && user.role === 'ADMIN' && (
         <div className="p-6 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -286,9 +317,9 @@ export default function UsuariosPage() {
             <CardDescription>Use os filtros abaixo para encontrar usuários específicos</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-end">
+            <div className="flex gap-4 items-end">
               {/* Campo de busca por nome */}
-              <div className="lg:col-span-8">
+              <div className="flex-1 max-w-xs">
                 <Label htmlFor="search">Nome do Usuário</Label>
                 <div className="relative">
                   <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -303,14 +334,53 @@ export default function UsuariosPage() {
                 </div>
               </div>
               
+              {/* Botão de buscar */}
+              <Button
+                onClick={() => {
+                  setHasSearched(true)
+                  searchUsuarios()
+                }}
+                disabled={!searchTerm.trim() || loading}
+                className="bg-[#FFD300] text-[#0C0C0C] hover:bg-[#E6BD00] h-10"
+              >
+                <Search className="w-4 h-4 mr-2" />
+                Buscar
+              </Button>
+              {/* Botão de listar todos, posicionado à direita do Buscar */}
+              <Button
+                onClick={() => {
+                  setHasSearched(true)
+                  setSearchTerm("")
+                  setFilterRole('ALL')
+                  loadUsuarios()
+                }}
+                disabled={loading}
+                variant="outline"
+                className="h-10"
+              >
+                <Users className="w-4 h-4 mr-2" />
+                Todos os Usuários
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Tabela de Usuários */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Usuários ({usuarios.length})</CardTitle>
+            <div className="flex items-center gap-3">
               {/* Filtro por tipo de usuário */}
-              <div className="lg:col-span-4">
-                <Label htmlFor="filter-role">Tipo de Usuário</Label>
+              <div className="w-48">
+                <Label htmlFor="filter-role" className="text-sm">Filtrar por tipo</Label>
                 <Select
                   value={filterRole}
-                  onValueChange={(value: 'ALL' | 'USER' | 'ADMIN') => setFilterRole(value)}
+                  onValueChange={(value: 'ALL' | 'USER' | 'ADMIN') => {
+                    setFilterRole(value)
+                    filterUsuarios(value)
+                  }}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="h-9">
                     <SelectValue placeholder="Selecione um tipo" />
                   </SelectTrigger>
                   <SelectContent>
@@ -320,42 +390,8 @@ export default function UsuariosPage() {
                   </SelectContent>
                 </Select>
               </div>
-              
-              {/* Botões de ação */}
-              <div className="lg:col-span-4 flex flex-col sm:flex-row gap-2 items-stretch sm:items-end">
-                <Button
-                  onClick={() => {
-                    setHasSearched(true)
-                    searchUsuarios()
-                  }}
-                  disabled={!searchTerm.trim() || loading}
-                  className="bg-[#FFD300] text-[#0C0C0C] hover:bg-[#E6BD00] flex-1 h-10"
-                >
-                  <Search className="w-4 h-4 mr-2" />
-                  Buscar
-                </Button>
-                <Button
-                  onClick={() => {
-                    setHasSearched(true)
-                    setSearchTerm("")
-                    loadUsuarios()
-                  }}
-                  disabled={loading}
-                  variant="outline"
-                  className="flex-1 h-10"
-                >
-                  <Users className="w-4 h-4 mr-2" />
-                  Todos
-                </Button>
-              </div>
+              {/* ...existing code... */}
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Tabela de Usuários */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Usuários ({usuarios.length})</CardTitle>
           </CardHeader>
           <CardContent>
             {!hasSearched ? (
@@ -402,7 +438,7 @@ export default function UsuariosPage() {
                         </TableCell>
                         <TableCell>
                           {(usuario.createdAt || usuario.dataCriacao)
-                            ? format(parseISO(usuario.createdAt || usuario.dataCriacao!), "dd/MM/yyyy", { locale: ptBR })
+                            ? format(parseISO(usuario.createdAt || usuario.dataCriacao!), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })
                             : "-"
                           }
                         </TableCell>

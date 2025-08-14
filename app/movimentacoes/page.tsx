@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -8,7 +9,8 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Package, Search, Download, Filter, MoveHorizontal } from "lucide-react"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Package, Search, Download, Filter, MoveHorizontal, Upload, ArrowUpDown, ArrowUp, ArrowDown, Eye, Edit, Trash2, MoreHorizontal } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { ApiService, Movimentacao, Produto } from "@/lib/api"
 import { Badge } from "@/components/ui/badge"
@@ -17,6 +19,7 @@ import { ptBR } from "date-fns/locale"
 import AuthenticatedLayout from "@/components/authenticated-layout"
 
 export default function MovimentacoesPage() {
+  const router = useRouter()
   const { toast } = useToast()
   type MovimentacaoWithProduto = Movimentacao & { produtoCompleto?: Produto }
   
@@ -25,19 +28,25 @@ export default function MovimentacoesPage() {
   const [loading, setLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
   const [hasSearched, setHasSearched] = useState(false)
-  const [filterTipo, setFilterTipo] = useState<'COMPRA' | 'VENDA' | ''>("")
+  const [filterTipo, setFilterTipo] = useState<'Compra' | 'Venda' | ''>("")
   const [filterProdutoId, setFilterProdutoId] = useState<number | null>(null)
   const [filterDataInicio, setFilterDataInicio] = useState("")
   const [filterDataFim, setFilterDataFim] = useState("")
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc') // 'desc' = mais recente primeiro
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [formData, setFormData] = useState<Omit<Movimentacao, "id" | "dataCriacao">>({
     produto: { id: 0 },
-    tipoMovimentacao: "COMPRA",
+    tipoMovimentacao: "Compra", // Padrão atualizado para o formato correto
     quantidadeMovimentada: 1,
     dataMovimentacao: new Date().toISOString().split('T')[0],
     motivo: "",
     observacoes: ""
   })
+
+  // Função para converter formato de tipo para o backend
+  const mapTipoForBackend = (tipo: string): 'COMPRA' | 'VENDA' => {
+    return tipo.toLowerCase() === 'compra' ? 'COMPRA' : 'VENDA'
+  }
 
   // Carregar movimentações
   const loadMovimentacoes = async () => {
@@ -45,19 +54,9 @@ export default function MovimentacoesPage() {
       setLoading(true)
       let data: Movimentacao[]
       
-      // Aplicar filtros do backend ou listar todas
-      if (!filterTipo && !filterProdutoId && !filterDataInicio && !filterDataFim) {
-        // Se não houver filtros ativos, lista todas as movimentações
-        data = await ApiService.listarMovimentacoes()
-      } else if (filterTipo) {
-        data = await ApiService.filtrarPorTipo(filterTipo)
-      } else if (filterDataInicio && filterDataFim) {
-        data = await ApiService.filtrarPorData(filterDataInicio, filterDataFim)
-      } else if (filterProdutoId) {
-        data = await ApiService.filtrarPorProduto(filterProdutoId)
-      } else {
-        data = await ApiService.listarMovimentacoes()
-      }
+      // Sempre carrega todas as movimentações e aplica filtros no frontend
+      // Isso é mais simples e permite combinação de filtros
+      data = await ApiService.listarMovimentacoes()
       
       // Buscar informações dos produtos para cada movimentação
       const movimentacoesComProdutos = await Promise.all(
@@ -173,7 +172,7 @@ export default function MovimentacoesPage() {
       if (filterProdutoId) {
         blob = await ApiService.exportarMovimentacoesPorProduto(filterProdutoId)
       } else if (filterTipo) {
-        blob = await ApiService.exportarMovimentacoesPorTipo(filterTipo)
+        blob = await ApiService.exportarMovimentacoesPorTipo(mapTipoForBackend(filterTipo))
       } else if (filterDataInicio && filterDataFim) {
         blob = await ApiService.exportarMovimentacoesPorData(filterDataInicio, filterDataFim)
       } else {
@@ -185,50 +184,61 @@ export default function MovimentacoesPage() {
         return
       }
 
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = 'movimentacoes.xlsx'
-      document.body.appendChild(a)
-      a.click()
-      window.URL.revokeObjectURL(url)
-      document.body.removeChild(a)
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'movimentacoes.xlsx';
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
       
       toast({
         title: "Exportação concluída",
         description: "Movimentações exportadas com sucesso!"
-      })
+      });
     } catch (error) {
       toast({
         title: "Erro ao exportar movimentações",
         description: error instanceof Error ? error.message : "Erro desconhecido",
         variant: "destructive"
-      })
+      });
     }
   }
 
   const resetForm = () => {
     setFormData({
       produto: { id: 0 },
-      tipoMovimentacao: "COMPRA",
+      tipoMovimentacao: "Compra", // Padrão atualizado
       quantidadeMovimentada: 1,
       dataMovimentacao: new Date().toISOString().split('T')[0],
       motivo: "",
       observacoes: ""
+    });
+  };
+
+  // Filtrar e ordenar movimentações
+  const filteredMovimentacoes = movimentacoes
+    .filter(mov => {
+      const matchesTipo = !filterTipo || mov.tipoMovimentacao?.toLowerCase() === filterTipo.toLowerCase();
+      const matchesProduto = !filterProdutoId || mov.produto.id === filterProdutoId;
+      
+      const dataMovimentacao = parseISO(mov.dataMovimentacao);
+      const matchesDataInicio = !filterDataInicio || dataMovimentacao >= parseISO(filterDataInicio);
+      const matchesDataFim = !filterDataFim || dataMovimentacao <= parseISO(filterDataFim);
+
+      return matchesTipo && matchesProduto && matchesDataInicio && matchesDataFim;
     })
-  }
-
-  // Filtrar movimentações
-  const filteredMovimentacoes = movimentacoes.filter(mov => {
-    const matchesTipo = !filterTipo || mov.tipoMovimentacao === filterTipo
-    const matchesProduto = !filterProdutoId || mov.produto.id === filterProdutoId
-    
-    const dataMovimentacao = parseISO(mov.dataMovimentacao)
-    const matchesDataInicio = !filterDataInicio || dataMovimentacao >= parseISO(filterDataInicio)
-    const matchesDataFim = !filterDataFim || dataMovimentacao <= parseISO(filterDataFim)
-
-    return matchesTipo && matchesProduto && matchesDataInicio && matchesDataFim
-  })
+    .sort((a, b) => {
+      const dataA = parseISO(a.dataMovimentacao);
+      const dataB = parseISO(b.dataMovimentacao);
+      
+      if (sortOrder === 'desc') {
+        return dataB.getTime() - dataA.getTime(); // Mais recente primeiro
+      } else {
+        return dataA.getTime() - dataB.getTime(); // Mais antigo primeiro
+      }
+    });
 
   useEffect(() => {
     loadMovimentacoes()
@@ -252,6 +262,10 @@ export default function MovimentacoesPage() {
           <Button onClick={() => handleExportMovimentacoes()} variant="outline" size="sm">
             <Download className="w-4 h-4 mr-2" />
             Exportar
+          </Button>
+          <Button onClick={() => router.push('/importar-dados')} variant="outline" size="sm">
+            <Upload className="w-4 h-4 mr-2" />
+            Importar
           </Button>
           <Button onClick={() => setShowCreateDialog(true)} className="bg-[#FFD300] text-[#0C0C0C] hover:bg-[#E6BD00]">
             <Package className="w-4 h-4 mr-2" />
@@ -304,8 +318,9 @@ export default function MovimentacoesPage() {
                   setFilterProdutoId(null)
                   setFilterDataInicio("")
                   setFilterDataFim("")
+                  setSortOrder('desc') // Volta ao padrão
                   setSearchTerm("")
-                  loadMovimentacoes()
+                  // Não precisa recarregar, loadMovimentacoes será chamado apenas uma vez no useEffect inicial
                 }}
                 disabled={loading}
                 variant="outline"
@@ -335,7 +350,7 @@ export default function MovimentacoesPage() {
               setFilterProdutoId(null)
               setFilterDataInicio("")
               setFilterDataFim("")
-              loadMovimentacoes()
+              setSortOrder('desc')
             }}
           >
             <Filter className="w-4 h-4 mr-2" />
@@ -368,24 +383,18 @@ export default function MovimentacoesPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div>
                     <Label htmlFor="filterTipo">Filtrar por tipo</Label>
-                    <Select value={filterTipo || "all"} onValueChange={(value: 'all' | 'COMPRA' | 'VENDA') => {
-                      setFilterTipo(value === "all" ? "" : value)
-                      if (value !== "all") {
-                        setFilterProdutoId(null)
-                        setFilterDataInicio("")
-                        setFilterDataFim("")
-                        loadMovimentacoes()
-                      } else {
-                        loadMovimentacoes()
-                      }
+                    <Select value={filterTipo || "all"} onValueChange={(value: string) => {
+                      const tipoValue = value === "all" ? "" : value
+                      setFilterTipo(tipoValue as 'Compra' | 'Venda' | '')
+                      // Não precisa recarregar, o filteredMovimentacoes já cuida disso
                     }}>
                       <SelectTrigger>
                         <SelectValue placeholder="Todos os tipos" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">Todos os tipos</SelectItem>
-                        <SelectItem value="COMPRA">Compra</SelectItem>
-                        <SelectItem value="VENDA">Venda</SelectItem>
+                        <SelectItem value="Compra">Compra</SelectItem>
+                        <SelectItem value="Venda">Venda</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -397,14 +406,7 @@ export default function MovimentacoesPage() {
                       onValueChange={(value) => {
                         const id = value === "all" ? null : parseInt(value)
                         setFilterProdutoId(id)
-                        if (id) {
-                          setFilterTipo("")
-                          setFilterDataInicio("")
-                          setFilterDataFim("")
-                        } else {
-                          setFilterTipo("")
-                        }
-                        loadMovimentacoes()
+                        // Não precisa recarregar ou limpar outros filtros - permite combinação
                       }}
                     >
                       <SelectTrigger>
@@ -428,11 +430,7 @@ export default function MovimentacoesPage() {
                       value={filterDataInicio}
                       onChange={(e) => {
                         setFilterDataInicio(e.target.value)
-                        if (filterDataFim && e.target.value) {
-                          setFilterTipo("")
-                          setFilterProdutoId(null)
-                          loadMovimentacoes()
-                        }
+                        // Não precisa recarregar ou limpar outros filtros
                       }}
                     />
                   </div>
@@ -444,14 +442,41 @@ export default function MovimentacoesPage() {
                       value={filterDataFim}
                       onChange={(e) => {
                         setFilterDataFim(e.target.value)
-                        if (filterDataInicio && e.target.value) {
-                          setFilterTipo("")
-                          setFilterProdutoId(null)
-                          loadMovimentacoes()
-                        }
+                        // Não precisa recarregar ou limpar outros filtros
                       }}
                     />
                   </div>
+                </div>
+
+                {/* Segunda linha para ordenação */}
+                <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="sortOrder" className="flex items-center gap-2">
+                      <ArrowUpDown className="h-4 w-4" />
+                      Ordenação
+                    </Label>
+                    <Select value={sortOrder} onValueChange={(value: 'asc' | 'desc') => {
+                      setSortOrder(value)
+                    }}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Ordenar por data" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="desc" className="flex items-center gap-2">
+                          <ArrowDown className="h-4 w-4 inline mr-2" />
+                          Mais recente primeiro
+                        </SelectItem>
+                        <SelectItem value="asc" className="flex items-center gap-2">
+                          <ArrowUp className="h-4 w-4 inline mr-2" />
+                          Mais antigo primeiro
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Espaços vazios para alinhamento */}
+                  <div></div>
+                  <div></div>
                 </div>
                 
 
@@ -464,10 +489,22 @@ export default function MovimentacoesPage() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Produto</TableHead>
-                        <TableHead>Data</TableHead>
+                        <TableHead 
+                          className="cursor-pointer select-none hover:bg-gray-50 transition-colors"
+                          onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
+                        >
+                          <div className="flex items-center gap-2">
+                            Data
+                            {sortOrder === 'desc' ? (
+                              <ArrowDown className="h-4 w-4 text-[#FFD300]" />
+                            ) : (
+                              <ArrowUp className="h-4 w-4 text-[#FFD300]" />
+                            )}
+                          </div>
+                        </TableHead>
                         <TableHead>Tipo</TableHead>
                         <TableHead className="text-center">Quantidade</TableHead>
-                        <TableHead>Motivo</TableHead>
+                        <TableHead className="text-center">Ações</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -488,15 +525,38 @@ export default function MovimentacoesPage() {
                             })()}
                           </TableCell>
                           <TableCell>
-                            <Badge variant={movimentacao.tipoMovimentacao === 'COMPRA' ? 'default' : 'secondary'}>
-                              {movimentacao.tipoMovimentacao === 'COMPRA' ? 'Compra' : 'Venda'}
+                            <Badge variant={movimentacao.tipoMovimentacao?.toLowerCase() === 'compra' ? 'default' : 'secondary'}>
+                              {movimentacao.tipoMovimentacao?.toLowerCase() === 'compra' ? 'Compra' : 'Venda'}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-center">
                             {movimentacao.quantidadeMovimentada}
                           </TableCell>
-                          <TableCell>
-                            {movimentacao.motivo || '-'}
+                          <TableCell className="text-center">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => console.log('Ver detalhes', movimentacao.id)}>
+                                  <Eye className="mr-2 h-4 w-4" />
+                                  Ver detalhes
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => console.log('Editar', movimentacao.id)}>
+                                  <Edit className="mr-2 h-4 w-4" />
+                                  Editar
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  onClick={() => console.log('Excluir', movimentacao.id)}
+                                  className="text-red-600 focus:text-red-600"
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Excluir
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -551,14 +611,14 @@ export default function MovimentacoesPage() {
               <Label htmlFor="tipo">Tipo de Movimentação *</Label>
               <Select
                 value={formData.tipoMovimentacao}
-                onValueChange={(value: 'COMPRA' | 'VENDA') => setFormData({...formData, tipoMovimentacao: value})}
+                onValueChange={(value: string) => setFormData({...formData, tipoMovimentacao: value})}
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="COMPRA">Compra</SelectItem>
-                  <SelectItem value="VENDA">Venda</SelectItem>
+                  <SelectItem value="Compra">Compra</SelectItem>
+                  <SelectItem value="Venda">Venda</SelectItem>
                 </SelectContent>
               </Select>
             </div>

@@ -4,12 +4,11 @@ import * as XLSX from 'xlsx'
 export function createProdutosTemplate(): Blob {
   // Dados de exemplo para o template de produtos
   const data = [
-    ['Nome', 'Preço', 'Descrição', 'Categoria', 'Quantidade Estoque'],
-    ['Smartphone XYZ', 899.99, 'Smartphone com 128GB de armazenamento', 'Eletrônicos', 50],
-    ['Camiseta Básica', 29.90, 'Camiseta 100% algodão tamanho M', 'Roupas', 120],
-    ['Livro de Programação', 45.50, 'Guia completo para desenvolvedores', 'Livros', 25],
-    ['Notebook Gamer', 2499.99, 'Notebook para jogos com placa de vídeo dedicada', 'Eletrônicos', 10],
-    ['', '', '', '', ''] // Linha vazia para o usuário preencher
+    ['Nome', 'Preço', 'Custo', 'Descrição', 'Categoria', 'Quantidade Estoque'],
+    ['Smartphone XYZ', 899.99, 799.99, 'Smartphone com 128GB de armazenamento', 'Eletrônicos', 50],
+    ['Camiseta Básica', 29.90, 19.90, 'Camiseta 100% algodão tamanho M', 'Roupas', 120],
+    ['Livro de Programação', 45.50, 35.50, 'Guia completo para desenvolvedores', 'Livros', 25],
+    ['Notebook Gamer', 2499.99, 1999.99, 'Notebook para jogos com placa de vídeo dedicada', 'Eletrônicos', 10],
   ]
 
   // Criar worksheet
@@ -19,6 +18,7 @@ export function createProdutosTemplate(): Blob {
   ws['!cols'] = [
     { wch: 30 }, // Nome
     { wch: 15 }, // Preço
+    { wch: 15 }, // Custo
     { wch: 50 }, // Descrição
     { wch: 20 }, // Categoria
     { wch: 18 }  // Quantidade Estoque
@@ -48,7 +48,6 @@ export function createMovimentacoesTemplate(): Blob {
     ['Livro de Programação', 20, '2025-01-17', 'Compra'],
     ['Smartphone XYZ', 3, '2025-01-18', 'Venda'],
     ['Notebook Gamer', 2, '2025-01-19', 'Compra'],
-    ['', '', '', ''] // Linha vazia para o usuário preencher
   ]
 
   // Criar worksheet
