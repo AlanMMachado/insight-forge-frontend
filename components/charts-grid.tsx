@@ -47,7 +47,7 @@ const ChartCard = memo(function ChartCard({
 }: ChartCardProps) {
   if (isLoading) {
     return (
-      <Card className={`p-4 sm:p-6 bg-white border-0 shadow-sm ${className}`}>
+      <Card className={`p-4 sm:p-6 bg-white border-[#FFD300]/20 shadow-sm rounded-2xl ${className}`}>
         <ChartSkeleton />
       </Card>
     )
@@ -55,13 +55,13 @@ const ChartCard = memo(function ChartCard({
 
   return (
     <Card
-      className={`p-4 sm:p-6 bg-white border-0 shadow-sm hover:shadow-md transition-shadow duration-300 ${className}`}
+      className={`p-4 sm:p-6 bg-gradient-to-br from-white to-[#FFFDF0] border-[#FFD300]/20 shadow-sm hover:shadow-lg transition-all duration-300 rounded-2xl ${className}`}
     >
       <div className="flex items-center gap-3 mb-4">
-        <div className="p-2 bg-[#FFD300] rounded-lg">
-          <Icon className="w-4 h-4 text-[#0C0C0C]" />
+        <div className="p-2 bg-gradient-to-br from-[#FFD300]/20 to-[#FFD300]/10 rounded-lg">
+          <Icon className="w-5 h-5 text-[#FFD300]" />
         </div>
-        <h3 className="text-base sm:text-lg font-semibold text-[#000000]">{title}</h3>
+        <h3 className="text-base sm:text-lg font-semibold text-[#0C0C0C]">{title}</h3>
       </div>
       {children}
     </Card>

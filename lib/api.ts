@@ -31,7 +31,9 @@ export const MOVIMENTACOES_ENDPOINTS = {
   importar: '/api/movimentacoes/importarMovimentacoes',
   exportarPorProduto: '/api/movimentacoes/exportarMovimentacoesPorProduto',
   exportarPorTipo: '/api/movimentacoes/exportarMovimentacoesPorTipo',
+  exportarPorCategoria: '/api/movimentacoes/exportarMovimentacoesPorCategoria',
   exportarPorData: '/api/movimentacoes/exportarMovimentacoesPorData',
+  exportar: '/api/movimentacoes/exportarMovimentacoes',
   listar: '/api/movimentacoes/listarMovimentacoes',
   criar: '/api/movimentacoes/criarMovimentacao',
   buscarPorId: '/api/movimentacoes/buscarPorId',
@@ -280,7 +282,7 @@ export class ApiService {
       };
     }
   }
-  static async exportarMovimentacoesPorProduto(produtoId: number): Promise<Blob> {
+  static async exportarMovimentacoesPorProduto(produtoId: number): Promise<{ blob: Blob; filename?: string }> {
     const token = getToken();
     const response = await fetch(`${API_BASE_URL}${MOVIMENTACOES_ENDPOINTS.exportarPorProduto}?produtoId=${produtoId}`, {
       headers: {
@@ -290,9 +292,13 @@ export class ApiService {
     if (!response.ok) {
       throw new Error('Erro ao exportar movimentações por produto');
     }
-    return await response.blob();
+    const blob = await response.blob();
+    const contentDisposition = response.headers.get('content-disposition') || '';
+    const match = /filename\*=UTF-8''([^;\n\r]+)/i.exec(contentDisposition) || /filename="?([^";\n\r]+)"?/i.exec(contentDisposition);
+    const filename = match ? decodeURIComponent(match[1]) : undefined;
+    return { blob, filename };
   }
-  static async exportarMovimentacoesPorTipo(tipo: 'COMPRA' | 'VENDA'): Promise<Blob> {
+  static async exportarMovimentacoesPorTipo(tipo: 'COMPRA' | 'VENDA'): Promise<{ blob: Blob; filename?: string }> {
     const token = getToken();
     const response = await fetch(`${API_BASE_URL}${MOVIMENTACOES_ENDPOINTS.exportarPorTipo}?tipo=${tipo}`, {
       headers: {
@@ -302,9 +308,29 @@ export class ApiService {
     if (!response.ok) {
       throw new Error('Erro ao exportar movimentações por tipo');
     }
-    return await response.blob();
+    const blob = await response.blob();
+    const contentDisposition = response.headers.get('content-disposition') || '';
+    const match = /filename\*=UTF-8''([^;\n\r]+)/i.exec(contentDisposition) || /filename="?([^";\n\r]+)"?/i.exec(contentDisposition);
+    const filename = match ? decodeURIComponent(match[1]) : undefined;
+    return { blob, filename };
   }
-  static async exportarMovimentacoesPorData(dataInicio: string, dataFim: string): Promise<Blob> {
+  static async exportarMovimentacoesPorCategoria(categoria: string): Promise<{ blob: Blob; filename?: string }> {
+    const token = getToken();
+    const response = await fetch(`${API_BASE_URL}${MOVIMENTACOES_ENDPOINTS.exportarPorCategoria}?categoria=${encodeURIComponent(categoria)}`, {
+      headers: {
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+    });
+    if (!response.ok) {
+      throw new Error('Erro ao exportar movimentações por categoria');
+    }
+    const blob = await response.blob();
+    const contentDisposition = response.headers.get('content-disposition') || '';
+    const match = /filename\*=UTF-8''([^;\n\r]+)/i.exec(contentDisposition) || /filename="?([^";\n\r]+)"?/i.exec(contentDisposition);
+    const filename = match ? decodeURIComponent(match[1]) : undefined;
+    return { blob, filename };
+  }
+  static async exportarMovimentacoesPorData(dataInicio: string, dataFim: string): Promise<{ blob: Blob; filename?: string }> {
     const token = getToken();
     const response = await fetch(`${API_BASE_URL}${MOVIMENTACOES_ENDPOINTS.exportarPorData}?dataInicio=${dataInicio}&dataFim=${dataFim}`, {
       headers: {
@@ -314,7 +340,28 @@ export class ApiService {
     if (!response.ok) {
       throw new Error('Erro ao exportar movimentações por data');
     }
-    return await response.blob();
+    const blob = await response.blob();
+    const contentDisposition = response.headers.get('content-disposition') || '';
+    const match = /filename\*=UTF-8''([^;\n\r]+)/i.exec(contentDisposition) || /filename="?([^";\n\r]+)"?/i.exec(contentDisposition);
+    const filename = match ? decodeURIComponent(match[1]) : undefined;
+    return { blob, filename };
+  }
+
+  static async exportarMovimentacoes(): Promise<{ blob: Blob; filename?: string }> {
+    const token = getToken();
+    const response = await fetch(`${API_BASE_URL}${MOVIMENTACOES_ENDPOINTS.exportar}`, {
+      headers: {
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+    });
+    if (!response.ok) {
+      throw new Error('Erro ao exportar movimentações');
+    }
+  const blob = await response.blob();
+  const contentDisposition = response.headers.get('content-disposition') || '';
+  const match = /filename\*=UTF-8''([^;\n\r]+)/i.exec(contentDisposition) || /filename="?([^";\n\r]+)"?/i.exec(contentDisposition);
+  const filename = match ? decodeURIComponent(match[1]) : undefined;
+  return { blob, filename };
   }
 
   // ===== Usuários =====

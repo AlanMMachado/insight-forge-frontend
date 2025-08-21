@@ -364,12 +364,19 @@ export default function ImportarDadosPage() {
     <AuthenticatedLayout>
       <div className="p-6 space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <FileSpreadsheet className="h-6 w-6 mr-2 text-[#FFD300]" />
-            <div>
-              <h1 className="text-3xl font-bold text-[#000000]">Importar Dados</h1>
-              <p className="text-[#9A9A9A] mt-2">Importe produtos ou movimentações através de planilhas Excel ou CSV</p>
+        <div className="bg-gradient-to-r from-white to-[#FFFDF0] p-6 rounded-2xl border border-[#FFD300]/20 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-gradient-to-br from-[#FFD300] to-[#E6BD00] rounded-xl shadow-md">
+                <Upload className="h-8 w-8 text-[#0C0C0C]" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-[#0C0C0C] mb-1">Importar Dados</h1>
+                <p className="text-gray-600 flex items-center gap-2">
+                  <span className="w-2 h-2 bg-[#FFD300] rounded-full"></span>
+                  Importe produtos ou movimentações através de planilhas
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -377,15 +384,19 @@ export default function ImportarDadosPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Card Principal - Upload */}
           <div className="lg:col-span-2">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-xl flex items-center gap-3">
-                  <Upload className="w-5 h-5 text-[#FFD300]" />
-                  Upload da Planilha
-                </CardTitle>
-                <CardDescription>
-                  Selecione um arquivo Excel (.xlsx) ou CSV (.csv) com seus dados
-                </CardDescription>
+            <Card className="border-[#FFD300]/20 shadow-sm hover:shadow-md transition-shadow duration-200">
+              <CardHeader className="bg-gradient-to-r from-[#FFFDF0] to-white">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-[#FFD300]/20 rounded-lg">
+                    <Upload className="w-5 h-5 text-[#0C0C0C]" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg text-[#0C0C0C]">Upload da Planilha</CardTitle>
+                    <CardDescription className="text-gray-600">
+                      Selecione um arquivo Excel (.xlsx) ou CSV (.csv) com seus dados
+                    </CardDescription>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Seleção do tipo de importação */}
@@ -399,18 +410,18 @@ export default function ImportarDadosPage() {
                     className="grid grid-cols-2 gap-4"
                     disabled={isUploading}
                   >
-                    <div className="flex items-center space-x-3 p-4 border rounded-lg hover:border-[#FFD300] transition-colors">
+                    <div className="flex items-center space-x-3 p-4 border rounded-xl hover:border-[#FFD300] hover:bg-[#FFFDF0] transition-all duration-200 border-[#FFD300]/20">
                       <RadioGroupItem value="produtos" id="produtos" />
                       <Label htmlFor="produtos" className="cursor-pointer flex-1">
-                        <div className="font-medium">Produtos</div>
-                        <div className="text-sm text-muted-foreground">Cadastro de produtos</div>
+                        <div className="font-medium text-[#0C0C0C]">Produtos</div>
+                        <div className="text-sm text-gray-600">Cadastro de produtos</div>
                       </Label>
                     </div>
-                    <div className="flex items-center space-x-3 p-4 border rounded-lg hover:border-[#FFD300] transition-colors">
+                    <div className="flex items-center space-x-3 p-4 border rounded-xl hover:border-[#FFD300] hover:bg-[#FFFDF0] transition-all duration-200 border-[#FFD300]/20">
                       <RadioGroupItem value="movimentacoes" id="movimentacoes" />
                       <Label htmlFor="movimentacoes" className="cursor-pointer flex-1">
-                        <div className="font-medium">Movimentações</div>
-                        <div className="text-sm text-muted-foreground">Entrada/saída estoque</div>
+                        <div className="font-medium text-[#0C0C0C]">Movimentações</div>
+                        <div className="text-sm text-gray-600">Entrada/saída estoque</div>
                       </Label>
                     </div>
                   </RadioGroup>
@@ -423,12 +434,12 @@ export default function ImportarDadosPage() {
                   </Label>
                   <div 
                     className={`
-                      border-2 border-dashed rounded-lg p-8 text-center transition-all duration-200
+                      border-2 border-dashed rounded-xl p-8 text-center transition-all duration-200
                       ${isDragOver 
-                        ? "border-[#FFD300] bg-yellow-50" 
+                        ? "border-[#FFD300] bg-[#FFFDF0]" 
                         : selectedFile 
                           ? "border-green-300 bg-green-50" 
-                          : "border-border hover:border-[#FFD300]"
+                          : "border-[#FFD300]/30 hover:border-[#FFD300] hover:bg-[#FFFDF0]"
                       }
                       ${isUploading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
                     `}
@@ -481,9 +492,9 @@ export default function ImportarDadosPage() {
                               fileInputRef.current?.click()
                             }}
                             disabled={isUploading}
-                            className="border-[#FFD300] text-[#FFD300] hover:bg-[#FFD300] hover:text-[#0C0C0C]"
+                            className="border-[#FFD300]/50 hover:border-[#FFD300] hover:bg-[#FFFDF0] transition-all duration-200 rounded-xl shadow-sm hover:shadow-md"
                           >
-                            <Upload className="w-4 h-4 mr-2" />
+                            <Upload className="w-4 h-4 mr-2 text-[#0C0C0C]" />
                             Selecionar Arquivo
                           </Button>
                         </div>
@@ -506,7 +517,7 @@ export default function ImportarDadosPage() {
 
                 {/* Descrição opcional */}
                 <div>
-                  <Label htmlFor="description" className="text-sm font-medium">
+                  <Label htmlFor="description" className="text-sm font-medium text-gray-700 mb-2 block">
                     Descrição (Opcional)
                   </Label>
                   <Input 
@@ -514,7 +525,7 @@ export default function ImportarDadosPage() {
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="Descreva o conteúdo da planilha..." 
-                    className="mt-2"
+                    className="border-gray-200 focus:border-[#FFD300] focus:ring-[#FFD300]/20 rounded-xl"
                     disabled={isUploading}
                   />
                 </div>
@@ -575,7 +586,7 @@ export default function ImportarDadosPage() {
                 <Button 
                   onClick={uploadFile}
                   disabled={!selectedFile || isUploading || isValidatingFile}
-                  className="w-full bg-[#FFD300] text-[#0C0C0C] hover:bg-[#E6BD00] font-medium disabled:opacity-50 h-12"
+                  className="w-full bg-gradient-to-r from-[#FFD300] to-[#E6BD00] text-[#0C0C0C] hover:from-[#E6BD00] hover:to-[#FFD300] shadow-md hover:shadow-lg transition-all duration-200 font-medium h-12 rounded-xl"
                 >
                   {isValidatingFile 
                     ? "Validando arquivo..." 
@@ -591,15 +602,19 @@ export default function ImportarDadosPage() {
           {/* Coluna Lateral - Informações */}
           <div className="space-y-6">
             {/* Card com informações sobre o formato esperado */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <FileSpreadsheet className="w-5 h-5 text-[#FFD300]" />
-                  Formato Esperado
-                </CardTitle>
-                <CardDescription>
-                  {importType === "produtos" ? "Estrutura para produtos" : "Estrutura para movimentações"}
-                </CardDescription>
+            <Card className="border-[#FFD300]/20 shadow-sm hover:shadow-md transition-shadow duration-200">
+              <CardHeader className="bg-gradient-to-r from-[#FFFDF0] to-white">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-[#FFD300]/20 rounded-lg">
+                    <FileSpreadsheet className="w-5 h-5 text-[#0C0C0C]" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg text-[#0C0C0C]">Formato Esperado</CardTitle>
+                    <CardDescription className="text-gray-600">
+                      {importType === "produtos" ? "Estrutura para produtos" : "Estrutura para movimentações"}
+                    </CardDescription>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="text-sm space-y-2">
@@ -640,9 +655,9 @@ export default function ImportarDadosPage() {
                   <Button 
                     variant="outline"
                     onClick={downloadTemplate}
-                    className="w-full"
+                    className="w-full border-[#FFD300]/50 hover:border-[#FFD300] hover:bg-[#FFFDF0] transition-all duration-200 rounded-xl shadow-sm hover:shadow-md"
                   >
-                    <Download className="w-4 h-4 mr-2" />
+                    <Download className="w-4 h-4 mr-2 text-[#0C0C0C]" />
                     Baixar Template
                   </Button>
                 </div>
@@ -650,12 +665,16 @@ export default function ImportarDadosPage() {
             </Card>
 
             {/* Card de Dicas */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <AlertTriangle className="w-5 h-5 text-[#FFD300]" />
-                  Dicas Importantes
-                </CardTitle>
+            <Card className="border-[#FFD300]/20 shadow-sm hover:shadow-md transition-shadow duration-200">
+              <CardHeader className="bg-gradient-to-r from-[#FFFDF0] to-white">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-[#FFD300]/20 rounded-lg">
+                    <AlertTriangle className="w-5 h-5 text-[#0C0C0C]" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg text-[#0C0C0C]">Dicas Importantes</CardTitle>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
                 <ul className="text-sm space-y-2">
