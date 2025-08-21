@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { RefreshCw, Download, Filter } from "lucide-react"
+import { RefreshCw, Download, Filter, BarChart3 } from "lucide-react"
 import { useState } from "react"
 
 export function DashboardHeader() {
@@ -14,42 +14,53 @@ export function DashboardHeader() {
   }
 
   return (
-    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-      <div className="space-y-2">
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl sm:text-3xl font-bold text-[#000000]">Dashboard</h1>
-          <Badge variant="secondary" className="bg-[#FFD300] text-[#0C0C0C] hover:bg-[#E6BD00]">
-            Ao Vivo
-          </Badge>
+    <div className="bg-gradient-to-r from-white to-[#FFFDF0] p-6 rounded-2xl border border-[#FFD300]/20 shadow-sm">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-gradient-to-br from-[#FFD300] to-[#E6BD00] rounded-xl shadow-md">
+            <BarChart3 className="h-8 w-8 text-[#0C0C0C]" />
+          </div>
+          <div>
+            <div className="flex items-center gap-3 mb-1">
+              <h1 className="text-3xl font-bold text-[#0C0C0C]">Dashboard</h1>
+              <Badge className="bg-gradient-to-r from-green-500 to-green-600 text-white border-0 shadow-sm">
+                <div className="w-2 h-2 bg-white rounded-full mr-2 animate-pulse"></div>
+                Ao Vivo
+              </Badge>
+            </div>
+            <p className="text-gray-600 flex items-center gap-2">
+              <span className="w-2 h-2 bg-[#FFD300] rounded-full"></span>
+              Visão geral do seu negócio • Última atualização: há 5 minutos
+            </p>
+          </div>
         </div>
-        <p className="text-sm text-[#9A9A9A]">Visão geral do seu negócio • Última atualização: há 5 minutos</p>
-      </div>
 
-      <div className="flex items-center gap-2 w-full sm:w-auto">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleRefresh}
-          disabled={isRefreshing}
-          className="border-[#CFCFCF] text-[#9A9A9A] hover:bg-[#F8F8F8] flex-1 sm:flex-none bg-transparent"
-        >
-          <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`} />
-          Atualizar
-        </Button>
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          <Button
+            variant="outline"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="border-[#FFD300]/50 hover:border-[#FFD300] hover:bg-[#FFFDF0] transition-all duration-200 shadow-sm hover:shadow-md flex-1 sm:flex-none rounded-xl"
+          >
+            <RefreshCw className={`w-4 h-4 mr-2 text-[#0C0C0C] ${isRefreshing ? "animate-spin" : ""}`} />
+            {isRefreshing ? 'Atualizando...' : 'Atualizar'}
+          </Button>
 
-        <Button
-          variant="outline"
-          size="sm"
-          className="border-[#CFCFCF] text-[#9A9A9A] hover:bg-[#F8F8F8] flex-1 sm:flex-none bg-transparent"
-        >
-          <Filter className="w-4 h-4 mr-2" />
-          Filtros
-        </Button>
+          <Button
+            variant="outline"
+            className="border-[#FFD300]/50 hover:border-[#FFD300] hover:bg-[#FFFDF0] transition-all duration-200 shadow-sm hover:shadow-md flex-1 sm:flex-none rounded-xl"
+          >
+            <Filter className="w-4 h-4 mr-2 text-[#0C0C0C]" />
+            Filtros
+          </Button>
 
-        <Button size="sm" className="bg-[#FFD300] text-[#0C0C0C] hover:bg-[#E6BD00] font-medium flex-1 sm:flex-none">
-          <Download className="w-4 h-4 mr-2" />
-          Exportar
-        </Button>
+          <Button 
+            className="bg-gradient-to-r from-[#FFD300] to-[#E6BD00] text-[#0C0C0C] hover:from-[#E6BD00] hover:to-[#FFD300] shadow-md hover:shadow-lg transition-all duration-200 font-medium flex-1 sm:flex-none rounded-xl"
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Exportar
+          </Button>
+        </div>
       </div>
     </div>
   )

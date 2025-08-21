@@ -295,40 +295,61 @@ export default function UsuariosPage() {
       {!authLoading && user && user.role === 'ADMIN' && (
         <div className="p-6 space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <Users className="h-6 w-6 mr-2 text-[#FFD300]" />
-            <div>
-              <h1 className="text-3xl font-bold text-[#000000]">Gerenciar Usuários</h1>
-              <p className="text-[#9A9A9A] mt-2">Gerencie os usuários do sistema</p>
+        <div className="bg-gradient-to-r from-white to-[#FFFDF0] p-6 rounded-2xl border border-[#FFD300]/20 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-gradient-to-br from-[#FFD300] to-[#E6BD00] rounded-xl shadow-md">
+                <Users className="h-8 w-8 text-[#0C0C0C]" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-[#0C0C0C] mb-1">Usuários</h1>
+                <p className="text-gray-600 flex items-center gap-2">
+                  <span className="w-2 h-2 bg-[#FFD300] rounded-full"></span>
+                  Gerencie os usuários do sistema
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <Button 
+                onClick={() => setShowCreateDialog(true)} 
+                className="bg-gradient-to-r from-[#FFD300] to-[#E6BD00] text-[#0C0C0C] hover:from-[#E6BD00] hover:to-[#FFD300] shadow-md hover:shadow-lg transition-all duration-200 font-medium"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Novo Usuário
+              </Button>
             </div>
           </div>
-          
-          <Button onClick={() => setShowCreateDialog(true)} className="bg-[#FFD300] text-[#0C0C0C] hover:bg-[#E6BD00]">
-            <Plus className="w-4 h-4 mr-2" />
-            Novo Usuário
-          </Button>
         </div>
 
         {/* Controles de Busca */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Buscar Usuários</CardTitle>
-            <CardDescription>Use os filtros abaixo para encontrar usuários específicos</CardDescription>
+        <Card className="border-[#FFD300]/20 shadow-sm hover:shadow-md transition-shadow duration-200">
+          <CardHeader className="bg-gradient-to-r from-[#FFFDF0] to-white">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-[#FFD300]/20 rounded-lg">
+                <Search className="h-5 w-5 text-[#0C0C0C]" />
+              </div>
+              <div>
+                <CardTitle className="text-lg text-[#0C0C0C]">Buscar Usuários</CardTitle>
+                <CardDescription className="text-gray-600">
+                  Use os filtros abaixo para encontrar usuários específicos
+                </CardDescription>
+              </div>
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex gap-4 items-end">
               {/* Campo de busca por nome */}
               <div className="flex-1 max-w-xs">
-                <Label htmlFor="search">Nome do Usuário</Label>
+                <Label htmlFor="search" className="text-sm font-medium text-gray-700 mb-2 block">Nome do Usuário</Label>
                 <div className="relative">
-                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <Input
                     id="search"
                     placeholder="Digite o nome do usuário..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-8 h-10"
+                    className="pl-10 h-11 border-gray-200 focus:border-[#FFD300] focus:ring-[#FFD300]/20 rounded-xl"
                     onKeyPress={(e) => e.key === 'Enter' && searchUsuarios()}
                   />
                 </div>
@@ -341,10 +362,10 @@ export default function UsuariosPage() {
                   searchUsuarios()
                 }}
                 disabled={!searchTerm.trim() || loading}
-                className="bg-[#FFD300] text-[#0C0C0C] hover:bg-[#E6BD00] h-10"
+                className="bg-gradient-to-r from-[#FFD300] to-[#E6BD00] text-[#0C0C0C] hover:from-[#E6BD00] hover:to-[#FFD300] shadow-md hover:shadow-lg transition-all duration-200 font-medium h-11 rounded-xl"
               >
                 <Search className="w-4 h-4 mr-2" />
-                Buscar
+                {loading ? 'Buscando...' : 'Buscar'}
               </Button>
               {/* Botão de listar todos, posicionado à direita do Buscar */}
               <Button
@@ -356,91 +377,147 @@ export default function UsuariosPage() {
                 }}
                 disabled={loading}
                 variant="outline"
-                className="h-10"
+                className="h-11 border-[#FFD300]/50 hover:border-[#FFD300] hover:bg-[#FFFDF0] transition-all duration-200 rounded-xl shadow-sm hover:shadow-md"
               >
-                <Users className="w-4 h-4 mr-2" />
+                <Users className="w-4 h-4 mr-2 text-[#0C0C0C]" />
                 Todos os Usuários
               </Button>
             </div>
           </CardContent>
         </Card>
 
-        {/* Tabela de Usuários */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Usuários ({usuarios.length})</CardTitle>
-            <div className="flex items-center gap-3">
-              {/* Filtro por tipo de usuário */}
-              <div className="w-48">
-                <Label htmlFor="filter-role" className="text-sm">Filtrar por tipo</Label>
-                <Select
-                  value={filterRole}
-                  onValueChange={(value: 'ALL' | 'USER' | 'ADMIN') => {
-                    setFilterRole(value)
-                    filterUsuarios(value)
-                  }}
-                >
-                  <SelectTrigger className="h-9">
-                    <SelectValue placeholder="Selecione um tipo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ALL">Todos</SelectItem>
-                    <SelectItem value="USER">Usuário</SelectItem>
-                    <SelectItem value="ADMIN">Administrador</SelectItem>
-                  </SelectContent>
-                </Select>
+        {/* Card de Usuários - modificado */}
+        <Card className="border-[#FFD300]/20 shadow-sm">
+          <CardHeader className="bg-gradient-to-r from-[#FFFDF0] to-white">
+            <div className="flex flex-row items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-[#FFD300]/20 rounded-lg">
+                  <Users className="h-5 w-5 text-[#0C0C0C]" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg text-[#0C0C0C]">
+                    Usuários Encontrados ({usuarios.length})
+                  </CardTitle>
+                  <CardDescription className="text-gray-600">
+                    {usuarios.length === 1 ? 'usuário encontrado' : 'usuários no sistema'}
+                  </CardDescription>
+                </div>
               </div>
-              {/* ...existing code... */}
+              <div className="flex items-center gap-3">
+                {/* Filtro por tipo de usuário */}
+                <div className="w-48">
+                  <Label htmlFor="filter-role" className="text-sm text-gray-700 mb-1 block">Filtrar por tipo</Label>
+                  <Select
+                    value={filterRole}
+                    onValueChange={(value: 'ALL' | 'USER' | 'ADMIN') => {
+                      setFilterRole(value)
+                      filterUsuarios(value)
+                    }}
+                  >
+                    <SelectTrigger className="h-9 border-gray-200 focus:border-[#FFD300] focus:ring-[#FFD300]/20 rounded-xl">
+                      <SelectValue placeholder="Selecione um tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ALL">Todos</SelectItem>
+                      <SelectItem value="USER">Usuário</SelectItem>
+                      <SelectItem value="ADMIN">Administrador</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             </div>
           </CardHeader>
           <CardContent>
             {!hasSearched ? (
-              <div className="text-center py-8">
-                <Search className="mx-auto h-12 w-12 text-gray-400" />
-                <h3 className="mt-2 text-sm font-medium text-gray-900">Use a busca para visualizar usuários</h3>
-                <p className="mt-1 text-sm text-gray-500">
-                  Digite o nome do usuário ou clique em "Todos" para listar todos.
-                </p>
+              <div className="py-16">
+                <div className="text-center">
+                  <div className="mx-auto w-20 h-20 bg-gradient-to-br from-[#FFD300]/20 to-[#FFD300]/10 rounded-full flex items-center justify-center mb-6">
+                    <Search className="h-10 w-10 text-[#FFD300]" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Use a busca para visualizar usuários</h3>
+                  <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                    Digite o nome do usuário ou clique em "Todos os Usuários" para listar todos.
+                  </p>
+                  <Button
+                    onClick={() => setShowCreateDialog(true)}
+                    className="bg-gradient-to-r from-[#FFD300] to-[#E6BD00] text-[#0C0C0C] hover:from-[#E6BD00] hover:to-[#FFD300] shadow-md hover:shadow-lg transition-all duration-200 font-medium rounded-xl"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Criar Primeiro Usuário
+                  </Button>
+                </div>
               </div>
             ) : loading ? (
               <div className="text-center py-8">Carregando usuários...</div>
             ) : usuarios.length === 0 ? (
-              <div className="text-center py-8">
-                <Users className="mx-auto h-12 w-12 text-gray-400" />
-                <h3 className="mt-2 text-sm font-medium text-gray-900">Nenhum usuário encontrado</h3>
-                <p className="mt-1 text-sm text-gray-500">
-                  Tente ajustar os filtros ou criar um novo usuário.
-                </p>
+              <div className="py-16">
+                <div className="text-center">
+                  <div className="mx-auto w-20 h-20 bg-gradient-to-br from-[#FFD300]/20 to-[#FFD300]/10 rounded-full flex items-center justify-center mb-6">
+                    <Users className="h-10 w-10 text-[#FFD300]" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Nenhum usuário encontrado</h3>
+                  <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                    Tente ajustar os filtros ou criar um novo usuário.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                    <Button
+                      onClick={() => setShowCreateDialog(true)}
+                      className="bg-gradient-to-r from-[#FFD300] to-[#E6BD00] text-[#0C0C0C] hover:from-[#E6BD00] hover:to-[#FFD300] shadow-md hover:shadow-lg transition-all duration-200 font-medium rounded-xl"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Novo Usuário
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        setSearchTerm("")
+                        setFilterRole('ALL')
+                        loadUsuarios()
+                      }}
+                      variant="outline"
+                      className="border-[#FFD300]/50 hover:border-[#FFD300] hover:bg-[#FFFDF0] transition-all duration-200 rounded-xl"
+                    >
+                      <Users className="w-4 h-4 mr-2 text-[#0C0C0C]" />
+                      Limpar Filtros
+                    </Button>
+                  </div>
+                </div>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead>Nome</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Data de Criação</TableHead>
-                      <TableHead className="text-center">Ações</TableHead>
+                    <TableRow className="bg-gray-50/50 border-b-2 border-[#FFD300]/20">
+                      <TableHead className="font-semibold text-gray-700">Nome</TableHead>
+                      <TableHead className="font-semibold text-gray-700">Email</TableHead>
+                      <TableHead className="font-semibold text-gray-700">Tipo</TableHead>
+                      <TableHead className="font-semibold text-gray-700">Data de Criação</TableHead>
+                      <TableHead className="text-center font-semibold text-gray-700">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {usuarios.map((usuario) => (
-                      <TableRow key={usuario.id}>
+                    {usuarios.map((usuario, index) => (
+                      <TableRow 
+                        key={usuario.id}
+                        className={`hover:bg-[#FFFDF0] transition-colors ${
+                          index % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'
+                        }`}
+                      >
                         <TableCell>
-                          <div className="font-medium">{usuario.nome}</div>
+                          <div className="font-medium text-gray-900">{usuario.nome}</div>
                         </TableCell>
                         <TableCell>
-                          {usuario.email}
+                          <span className="text-gray-700">{usuario.email}</span>
                         </TableCell>
                         <TableCell>
                           {getRoleBadge(usuario.role)}
                         </TableCell>
                         <TableCell>
-                          {(usuario.createdAt || usuario.dataCriacao)
-                            ? format(parseISO(usuario.createdAt || usuario.dataCriacao!), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })
-                            : "-"
-                          }
+                          <span className="text-gray-700">
+                            {(usuario.createdAt || usuario.dataCriacao)
+                              ? format(parseISO(usuario.createdAt || usuario.dataCriacao!), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })
+                              : "-"
+                            }
+                          </span>
                         </TableCell>
                         <TableCell>
                           <div className="flex justify-center space-x-1">
@@ -448,7 +525,8 @@ export default function UsuariosPage() {
                               variant="ghost"
                               size="sm"
                               onClick={() => openViewDialog(usuario)}
-                              className="h-8 w-8 p-0"
+                              className="h-8 w-8 p-0 hover:bg-blue-100 hover:text-blue-600 transition-colors rounded-lg"
+                              title="Visualizar"
                             >
                               <Eye className="w-4 h-4" />
                             </Button>
@@ -456,7 +534,8 @@ export default function UsuariosPage() {
                               variant="ghost"
                               size="sm"
                               onClick={() => openEditDialog(usuario)}
-                              className="h-8 w-8 p-0"
+                              className="h-8 w-8 p-0 hover:bg-yellow-100 hover:text-yellow-600 transition-colors rounded-lg"
+                              title="Editar"
                             >
                               <Edit className="w-4 h-4" />
                             </Button>
@@ -464,7 +543,8 @@ export default function UsuariosPage() {
                               variant="ghost"
                               size="sm"
                               onClick={() => usuario.id && handleDeleteUsuario(usuario.id)}
-                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                              className="h-8 w-8 p-0 text-red-600 hover:bg-red-100 hover:text-red-700 transition-colors rounded-lg"
+                              title="Excluir"
                             >
                               <Trash2 className="w-4 h-4" />
                             </Button>
@@ -481,54 +561,64 @@ export default function UsuariosPage() {
 
         {/* Dialog para Criar Usuário */}
         <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Novo Usuário</DialogTitle>
-              <DialogDescription>
-                Cadastre um novo usuário no sistema
-              </DialogDescription>
+          <DialogContent className="max-w-2xl border-[#FFD300]/20 shadow-xl rounded-2xl">
+            <DialogHeader className="bg-gradient-to-r from-[#FFFDF0] to-white p-6 -m-6 mb-6 rounded-t-2xl border-b border-[#FFD300]/20">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-[#FFD300]/20 rounded-lg">
+                  <Plus className="h-5 w-5 text-[#0C0C0C]" />
+                </div>
+                <div>
+                  <DialogTitle className="text-xl text-[#0C0C0C]">Novo Usuário</DialogTitle>
+                  <DialogDescription className="text-gray-600">
+                    Cadastre um novo usuário no sistema
+                  </DialogDescription>
+                </div>
+              </div>
             </DialogHeader>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="nome">Nome Completo *</Label>
+                <Label htmlFor="nome" className="text-sm font-medium text-gray-700 mb-2 block">Nome Completo *</Label>
                 <Input
                   id="nome"
                   value={formData.nome}
                   onChange={(e) => setFormData({...formData, nome: e.target.value})}
                   placeholder="Nome completo do usuário"
+                  className="border-gray-200 focus:border-[#FFD300] focus:ring-[#FFD300]/20 rounded-xl"
                 />
               </div>
               
               <div>
-                <Label htmlFor="email">Email *</Label>
+                <Label htmlFor="email" className="text-sm font-medium text-gray-700 mb-2 block">Email *</Label>
                 <Input
                   id="email"
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({...formData, email: e.target.value})}
                   placeholder="email@exemplo.com"
+                  className="border-gray-200 focus:border-[#FFD300] focus:ring-[#FFD300]/20 rounded-xl"
                 />
               </div>
               
               <div>
-                <Label htmlFor="password">Senha *</Label>
+                <Label htmlFor="password" className="text-sm font-medium text-gray-700 mb-2 block">Senha *</Label>
                 <Input
                   id="password"
                   type="password"
                   value={formData.password}
                   onChange={(e) => setFormData({...formData, password: e.target.value})}
                   placeholder="Senha do usuário"
+                  className="border-gray-200 focus:border-[#FFD300] focus:ring-[#FFD300]/20 rounded-xl"
                 />
               </div>
               
               <div>
-                <Label htmlFor="role">Tipo de Usuário</Label>
+                <Label htmlFor="role" className="text-sm font-medium text-gray-700 mb-2 block">Tipo de Usuário</Label>
                 <Select
                   value={formData.role}
                   onValueChange={(value: 'USER' | 'ADMIN') => setFormData({...formData, role: value})}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="border-gray-200 focus:border-[#FFD300] focus:ring-[#FFD300]/20 rounded-xl">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -539,14 +629,18 @@ export default function UsuariosPage() {
               </div>
             </div>
             
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
+            <DialogFooter className="gap-3">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowCreateDialog(false)}
+                className="border-[#FFD300]/50 hover:border-[#FFD300] hover:bg-[#FFFDF0] transition-all duration-200 rounded-xl"
+              >
                 Cancelar
               </Button>
               <Button 
                 onClick={handleCreateUsuario}
                 disabled={!formData.nome.trim() || !formData.email.trim() || !formData.password.trim()}
-                className="bg-[#FFD300] text-[#0C0C0C] hover:bg-[#E6BD00]"
+                className="bg-gradient-to-r from-[#FFD300] to-[#E6BD00] text-[#0C0C0C] hover:from-[#E6BD00] hover:to-[#FFD300] shadow-md hover:shadow-lg transition-all duration-200 font-medium rounded-xl"
               >
                 Criar Usuário
               </Button>
@@ -556,43 +650,52 @@ export default function UsuariosPage() {
 
         {/* Dialog para Editar Usuário */}
         <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Editar Usuário</DialogTitle>
-              <DialogDescription>
-                Altere as informações do usuário
-              </DialogDescription>
+          <DialogContent className="max-w-2xl border-[#FFD300]/20 shadow-xl rounded-2xl">
+            <DialogHeader className="bg-gradient-to-r from-[#FFFDF0] to-white p-6 -m-6 mb-6 rounded-t-2xl border-b border-[#FFD300]/20">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-[#FFD300]/20 rounded-lg">
+                  <Edit className="h-5 w-5 text-[#0C0C0C]" />
+                </div>
+                <div>
+                  <DialogTitle className="text-xl text-[#0C0C0C]">Editar Usuário</DialogTitle>
+                  <DialogDescription className="text-gray-600">
+                    Altere as informações do usuário
+                  </DialogDescription>
+                </div>
+              </div>
             </DialogHeader>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="edit-nome">Nome Completo *</Label>
+                <Label htmlFor="edit-nome" className="text-sm font-medium text-gray-700 mb-2 block">Nome Completo *</Label>
                 <Input
                   id="edit-nome"
                   value={editFormData.nome}
                   onChange={(e) => setEditFormData({...editFormData, nome: e.target.value})}
                   placeholder="Nome completo do usuário"
+                  className="border-gray-200 focus:border-[#FFD300] focus:ring-[#FFD300]/20 rounded-xl"
                 />
               </div>
               
               <div>
-                <Label htmlFor="edit-email">Email *</Label>
+                <Label htmlFor="edit-email" className="text-sm font-medium text-gray-700 mb-2 block">Email *</Label>
                 <Input
                   id="edit-email"
                   type="email"
                   value={editFormData.email}
                   onChange={(e) => setEditFormData({...editFormData, email: e.target.value})}
                   placeholder="email@exemplo.com"
+                  className="border-gray-200 focus:border-[#FFD300] focus:ring-[#FFD300]/20 rounded-xl"
                 />
               </div>
               
               <div className="md:col-span-2">
-                <Label htmlFor="edit-role">Tipo de Usuário</Label>
+                <Label htmlFor="edit-role" className="text-sm font-medium text-gray-700 mb-2 block">Tipo de Usuário</Label>
                 <Select
                   value={editFormData.role}
                   onValueChange={(value: 'USER' | 'ADMIN') => setEditFormData({...editFormData, role: value})}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="border-gray-200 focus:border-[#FFD300] focus:ring-[#FFD300]/20 rounded-xl">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -603,14 +706,18 @@ export default function UsuariosPage() {
               </div>
             </div>
             
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowEditDialog(false)}>
+            <DialogFooter className="gap-3">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowEditDialog(false)}
+                className="border-[#FFD300]/50 hover:border-[#FFD300] hover:bg-[#FFFDF0] transition-all duration-200 rounded-xl"
+              >
                 Cancelar
               </Button>
               <Button 
                 onClick={handleUpdateUsuario}
                 disabled={!editFormData.nome.trim() || !editFormData.email.trim()}
-                className="bg-[#FFD300] text-[#0C0C0C] hover:bg-[#E6BD00]"
+                className="bg-gradient-to-r from-[#FFD300] to-[#E6BD00] text-[#0C0C0C] hover:from-[#E6BD00] hover:to-[#FFD300] shadow-md hover:shadow-lg transition-all duration-200 font-medium rounded-xl"
               >
                 Salvar Alterações
               </Button>
@@ -620,45 +727,56 @@ export default function UsuariosPage() {
 
         {/* Dialog para Visualizar Usuário */}
         <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Detalhes do Usuário</DialogTitle>
+          <DialogContent className="max-w-2xl border-[#FFD300]/20 shadow-xl rounded-2xl">
+            <DialogHeader className="bg-gradient-to-r from-[#FFFDF0] to-white p-6 -m-6 mb-6 rounded-t-2xl border-b border-[#FFD300]/20">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-[#FFD300]/20 rounded-lg">
+                  <Eye className="h-5 w-5 text-[#0C0C0C]" />
+                </div>
+                <div>
+                  <DialogTitle className="text-xl text-[#0C0C0C]">Detalhes do Usuário</DialogTitle>
+                </div>
+              </div>
             </DialogHeader>
             
             {selectedUsuario && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">Nome</Label>
-                    <p className="text-sm text-gray-900">{selectedUsuario.nome}</p>
-                  </div>
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <Card className="p-4 bg-gradient-to-r from-gray-50 to-white border-gray-200/50 rounded-xl">
+                    <Label className="text-sm font-medium text-gray-700 mb-2 block">Nome</Label>
+                    <p className="text-lg font-semibold text-gray-900">{selectedUsuario.nome}</p>
+                  </Card>
                   
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">Email</Label>
-                    <p className="text-sm text-gray-900">{selectedUsuario.email}</p>
-                  </div>
+                  <Card className="p-4 bg-gradient-to-r from-gray-50 to-white border-gray-200/50 rounded-xl">
+                    <Label className="text-sm font-medium text-gray-700 mb-2 block">Email</Label>
+                    <p className="text-lg font-semibold text-gray-900">{selectedUsuario.email}</p>
+                  </Card>
                   
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">Tipo de Usuário</Label>
-                    <div className="mt-1">
+                  <Card className="p-4 bg-gradient-to-r from-gray-50 to-white border-gray-200/50 rounded-xl">
+                    <Label className="text-sm font-medium text-gray-700 mb-2 block">Tipo de Usuário</Label>
+                    <div className="mt-2">
                       {getRoleBadge(selectedUsuario.role)}
                     </div>
-                  </div>
+                  </Card>
                   
                   {(selectedUsuario.createdAt || selectedUsuario.dataCriacao) && (
-                    <div>
-                      <Label className="text-sm font-medium text-gray-700">Data de Criação</Label>
-                      <p className="text-sm text-gray-900">
+                    <Card className="p-4 bg-gradient-to-r from-gray-50 to-white border-gray-200/50 rounded-xl">
+                      <Label className="text-sm font-medium text-gray-700 mb-2 block">Data de Criação</Label>
+                      <p className="text-lg font-semibold text-gray-900">
                         {format(parseISO(selectedUsuario.createdAt || selectedUsuario.dataCriacao!), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR })}
                       </p>
-                    </div>
+                    </Card>
                   )}
                 </div>
               </div>
             )}
             
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowViewDialog(false)}>
+              <Button 
+                variant="outline" 
+                onClick={() => setShowViewDialog(false)}
+                className="border-[#FFD300]/50 hover:border-[#FFD300] hover:bg-[#FFFDF0] transition-all duration-200 rounded-xl"
+              >
                 Fechar
               </Button>
             </DialogFooter>
