@@ -1,4 +1,4 @@
-import * as XLSX from 'xlsx'
+import * as ExcelJS from 'exceljs'
 
 // Utilitário para validação de arquivos de importação
 export function readFileAsArrayBuffer(file: File): Promise<ArrayBuffer> {
@@ -35,16 +35,16 @@ export async function extractFileHeaders(file: File): Promise<string[]> {
   
   if (extension === 'xlsx' || extension === 'xls') {
     const buffer = await readFileAsArrayBuffer(file)
-    const workbook = XLSX.read(buffer, { type: 'array' })
-    const firstSheetName = workbook.SheetNames[0]
-    const worksheet = workbook.Sheets[firstSheetName]
+    const workbook = new ExcelJS.Workbook()
+    await workbook.xlsx.load(buffer)
+    const worksheet = workbook.getWorksheet(1)
     
-    // Converte para JSON para pegar os headers
-    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 })
-    if (jsonData.length === 0) return []
+    if (!worksheet) return []
     
-    const headers = (jsonData[0] as string[]) || []
-    return headers.map(h => String(h).trim())
+    // Pega a primeira linha para os headers
+    const firstRow = worksheet.getRow(1)
+    const headers = (firstRow.values as any[]) || []
+    return headers.slice(1).map(h => String(h || '').trim())  // Remove o primeiro elemento (undefined)
   }
   
   return []

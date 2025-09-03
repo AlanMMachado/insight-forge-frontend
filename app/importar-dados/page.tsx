@@ -24,7 +24,6 @@ type ImportType = "produtos" | "movimentacoes"
 export default function ImportarDadosPage() {
   const [importType, setImportType] = useState<ImportType>("produtos")
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
-  const [description, setDescription] = useState("")
   const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [uploadStatus, setUploadStatus] = useState<ImportStatus>("idle")
@@ -207,7 +206,6 @@ export default function ImportarDadosPage() {
         
         setTimeout(() => {
           setSelectedFile(null)
-          setDescription("")
           setUploadProgress(0)
           setUploadStatus("idle")
           if (fileInputRef.current) {
@@ -235,7 +233,6 @@ export default function ImportarDadosPage() {
           
           setTimeout(() => {
             setSelectedFile(null)
-            setDescription("")
             setUploadProgress(0)
             setUploadStatus("idle")
             if (fileInputRef.current) {
@@ -262,7 +259,7 @@ export default function ImportarDadosPage() {
   const downloadTemplate = async () => {
     try {
       if (importType === "produtos") {
-        const blob = createProdutosTemplate()
+        const blob = await createProdutosTemplate()
         downloadFile(blob, "template-produtos.xlsx")
         
         toast({
@@ -270,7 +267,7 @@ export default function ImportarDadosPage() {
           description: "Template para produtos baixado com sucesso",
         })
       } else {
-        const blob = createMovimentacoesTemplate()
+        const blob = await createMovimentacoesTemplate()
         downloadFile(blob, "template-movimentacoes.xlsx")
         
         toast({
@@ -309,7 +306,6 @@ export default function ImportarDadosPage() {
     // Limpar formulário
     setTimeout(() => {
       setSelectedFile(null)
-      setDescription("")
       setUploadProgress(0)
       setUploadStatus("idle")
       if (fileInputRef.current) {
@@ -352,7 +348,6 @@ export default function ImportarDadosPage() {
   const handleCancelReimport = () => {
     // Limpar formulário
     setSelectedFile(null)
-    setDescription("")
     setUploadProgress(0)
     setUploadStatus("idle")
     if (fileInputRef.current) {
@@ -513,21 +508,6 @@ export default function ImportarDadosPage() {
                       disabled={isUploading}
                     />
                   </div>
-                </div>
-
-                {/* Descrição opcional */}
-                <div>
-                  <Label htmlFor="description" className="text-sm font-medium text-gray-700 mb-2 block">
-                    Descrição (Opcional)
-                  </Label>
-                  <Input 
-                    id="description" 
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Descreva o conteúdo da planilha..." 
-                    className="border-gray-200 focus:border-[#FFD300] focus:ring-[#FFD300]/20 rounded-xl"
-                    disabled={isUploading}
-                  />
                 </div>
 
                 {/* Validação de arquivo */}

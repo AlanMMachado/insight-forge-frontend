@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react"
 import { ApiService } from "@/lib/api"
+import { ImportProdutosResponse, ImportMovimentacoesResponse } from "@/types/import"
 import { useToast } from "@/hooks/use-toast"
 
 export type ImportType = "produtos" | "movimentacoes"
@@ -41,19 +42,25 @@ export function useImport({ onSuccess, onError }: UseImportProps = {}) {
         })
       }, 200)
 
-      let message: string
+      let apiResult: ImportProdutosResponse | ImportMovimentacoesResponse
       if (type === "produtos") {
-        message = await ApiService.importarProdutos(file)
+        apiResult = await ApiService.importarProdutos(file)
       } else {
-        message = await ApiService.importarMovimentacoes(file)
+        apiResult = await ApiService.importarMovimentacoes(file)
       }
+
+      const message = apiResult.mensagem
+      const recordsProcessed = 'produtosImportados' in apiResult 
+        ? apiResult.produtosImportados 
+        : apiResult.movimentacoesImportadas
 
       clearInterval(progressInterval)
       setProgress(100)
 
       const result: ImportResult = {
         success: true,
-        message
+        message,
+        recordsProcessed
       }
 
       toast({
@@ -108,7 +115,6 @@ export function useImport({ onSuccess, onError }: UseImportProps = {}) {
 
         return true
       } else {
-        // Para movimentações, não há template disponível ainda
         toast({
           title: "Template não disponível",
           description: "Template para movimentações ainda não está disponível",

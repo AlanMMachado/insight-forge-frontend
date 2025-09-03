@@ -4,6 +4,7 @@ import { BarChart3, MoveHorizontal, Home, Package, Users, Upload } from "lucide-
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
+import { usePageLoading } from "@/hooks/use-page-loading"
 import {
   Sidebar,
   SidebarContent,
@@ -46,6 +47,7 @@ const menuItems = [
 export function AppSidebar() {
   const pathname = usePathname()
   const { user } = useAuth()
+  const { navigateWithLoading } = usePageLoading()
 
   // Filtrar itens do menu baseado na role do usuário
   const filteredMenuItems = menuItems.filter(item => {
@@ -54,6 +56,12 @@ export function AppSidebar() {
     }
     return true
   })
+
+  const handleNavigation = (url: string, title: string) => {
+    if (pathname !== url) {
+      navigateWithLoading(url, `Carregando ${title}...`)
+    }
+  }
 
   return (
   <Sidebar collapsible="icon" className="bg-sidebar border-r-0 transition-all duration-200">
@@ -75,10 +83,13 @@ export function AppSidebar() {
                 tooltip={item.title}
                 className="text-white hover:bg-sidebar-accent hover:text-amber-400 data-[active=true]:bg-amber-400 data-[active=true]:text-gray-900 data-[active=true]:font-medium transition-colors duration-200 py-4 px-4 group-data-[collapsible=icon]:px-3 rounded-lg min-h-[3rem] group-data-[collapsible=icon]:justify-center"
               >
-                <Link href={item.url} className="flex items-center gap-4 w-full">
+                <button 
+                  onClick={() => handleNavigation(item.url, item.title)}
+                  className="flex items-center gap-4 w-full"
+                >
                   <item.icon className="w-6 h-6 flex-shrink-0 group-data-[collapsible=icon]:w-6 group-data-[collapsible=icon]:h-6" />
                   <span className="text-base font-medium group-data-[collapsible=icon]:sr-only">{item.title}</span>
-                </Link>
+                </button>
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}

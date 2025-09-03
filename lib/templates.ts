@@ -1,7 +1,7 @@
-import * as XLSX from 'xlsx'
+import * as ExcelJS from 'exceljs'
 
 // Utilitário para criar arquivos Excel template
-export function createProdutosTemplate(): Blob {
+export async function createProdutosTemplate(): Promise<Blob> {
   // Dados de exemplo para o template de produtos
   const data = [
     ['Nome', 'Preço', 'Custo', 'Descrição', 'Categoria', 'Quantidade Estoque'],
@@ -11,67 +11,67 @@ export function createProdutosTemplate(): Blob {
     ['Notebook Gamer', 2499.99, 1999.99, 'Notebook para jogos com placa de vídeo dedicada', 'Eletrônicos', 10],
   ]
 
-  // Criar worksheet
-  const ws = XLSX.utils.aoa_to_sheet(data)
+  // Criar workbook e worksheet
+  const workbook = new ExcelJS.Workbook()
+  const worksheet = workbook.addWorksheet('Produtos')
+
+  // Adicionar dados
+  worksheet.addRows(data)
   
   // Definir larguras das colunas
-  ws['!cols'] = [
-    { wch: 30 }, // Nome
-    { wch: 15 }, // Preço
-    { wch: 15 }, // Custo
-    { wch: 50 }, // Descrição
-    { wch: 20 }, // Categoria
-    { wch: 18 }  // Quantidade Estoque
+  worksheet.columns = [
+    { width: 30 }, // Nome
+    { width: 15 }, // Preço
+    { width: 15 }, // Custo
+    { width: 50 }, // Descrição
+    { width: 20 }, // Categoria
+    { width: 18 }  // Quantidade Estoque
   ]
 
   // Adicionar autofilter na primeira linha (cabeçalho)
-  ws['!autofilter'] = { ref: 'A1:E1' }
+  worksheet.autoFilter = 'A1:F1'
 
-  // Criar workbook
-  const wb = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(wb, ws, 'Produtos')
-
-  // Gerar arquivo Excel
-  const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
+  // Gerar buffer e retornar Blob
+  const buffer = await workbook.xlsx.writeBuffer()
   
-  return new Blob([excelBuffer], { 
+  return new Blob([buffer], { 
     type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
   })
 }
 
-export function createMovimentacoesTemplate(): Blob {
+export async function createMovimentacoesTemplate(): Promise<Blob> {
   // Dados de exemplo para o template de movimentações
   const data = [
     ['Nome do Produto', 'Quantidade Movimentada', 'Data da Movimentação', 'Tipo de Movimentação'],
-    ['Smartphone XYZ', 10, '2025-01-15', 'Compra'],
-    ['Camiseta Básica', 5, '2025-01-16', 'Venda'],
-    ['Livro de Programação', 20, '2025-01-17', 'Compra'],
-    ['Smartphone XYZ', 3, '2025-01-18', 'Venda'],
-    ['Notebook Gamer', 2, '2025-01-19', 'Compra'],
+    ['Smartphone XYZ', 10, '2025-08-15', 'Compra'],
+    ['Camiseta Básica', 5, '2025-08-16', 'Venda'],
+    ['Livro de Programação', 20, '2025-07-17', 'Compra'],
+    ['Smartphone XYZ', 3, '2025-07-18', 'Venda'],
+    ['Notebook Gamer', 2, '2025-08-19', 'Compra'],
   ]
 
-  // Criar worksheet
-  const ws = XLSX.utils.aoa_to_sheet(data)
+  // Criar workbook e worksheet
+  const workbook = new ExcelJS.Workbook()
+  const worksheet = workbook.addWorksheet('Movimentações')
+
+  // Adicionar dados
+  worksheet.addRows(data)
   
   // Definir larguras das colunas
-  ws['!cols'] = [
-    { wch: 30 }, // Nome do Produto
-    { wch: 22 }, // Quantidade Movimentada
-    { wch: 22 }, // Data da Movimentação
-    { wch: 22 }  // Tipo de Movimentação
+  worksheet.columns = [
+    { width: 30 }, // Nome do Produto
+    { width: 22 }, // Quantidade Movimentada
+    { width: 22 }, // Data da Movimentação
+    { width: 22 }  // Tipo de Movimentação
   ]
 
   // Adicionar autofilter na primeira linha (cabeçalho)
-  ws['!autofilter'] = { ref: 'A1:D1' }
+  worksheet.autoFilter = 'A1:D1'
 
-  // Criar workbook
-  const wb = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(wb, ws, 'Movimentações')
-
-  // Gerar arquivo Excel
-  const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
+  // Gerar buffer e retornar Blob
+  const buffer = await workbook.xlsx.writeBuffer()
   
-  return new Blob([excelBuffer], { 
+  return new Blob([buffer], { 
     type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
   })
 }
