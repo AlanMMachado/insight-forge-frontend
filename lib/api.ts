@@ -3,6 +3,18 @@ const getToken = (): string | null => {
   return typeof window !== 'undefined' ? localStorage.getItem('token') : null;
 };
 
+// Função para acessar o contexto de loading (será injetada)
+let showGlobalLoading: ((message?: string) => void) | null = null;
+let hideGlobalLoading: (() => void) | null = null;
+
+export const setLoadingFunctions = (
+  show: (message?: string) => void,
+  hide: () => void
+) => {
+  showGlobalLoading = show;
+  hideGlobalLoading = hide;
+};
+
 // Configuração da API
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080'
 
@@ -103,27 +115,43 @@ export class ApiService {
 
   private static async request<T>(
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
+    loadingMessage?: string
   ): Promise<T> {
-    const url = `${API_BASE_URL}${endpoint}`;
-    const response = await fetch(url, {
-      headers: {
-        ...this.getAuthHeaders(),
-        ...options.headers,
-      },
-      ...options,
-    });
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(errorText || `HTTP error! status: ${response.status}`);
+    // Mostrar loading se configurado e não for uma requisição de arquivo
+    const isFileUpload = options.body instanceof FormData;
+    if (showGlobalLoading && !isFileUpload && loadingMessage) {
+      showGlobalLoading(loadingMessage);
     }
-    if (response.headers.get('content-type')?.includes('text/plain')) {
-      return (await response.text()) as T;
+
+    try {
+      const url = `${API_BASE_URL}${endpoint}`;
+      const response = await fetch(url, {
+        headers: {
+          ...this.getAuthHeaders(),
+          ...options.headers,
+        },
+        ...options,
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || `HTTP error! status: ${response.status}`);
+      }
+      
+      if (response.headers.get('content-type')?.includes('text/plain')) {
+        return (await response.text()) as T;
+      }
+      if (response.headers.get('content-type')?.includes('application/json')) {
+        return await response.json();
+      }
+      return response as T;
+    } finally {
+      // Esconder loading se configurado
+      if (hideGlobalLoading && !isFileUpload && loadingMessage) {
+        hideGlobalLoading();
+      }
     }
-    if (response.headers.get('content-type')?.includes('application/json')) {
-      return await response.json();
-    }
-    return response as T;
   }
 
   // ===== Autenticação =====
@@ -136,7 +164,7 @@ export class ApiService {
 
   // ===== Produtos =====
   static async listarProdutos(): Promise<Produto[]> {
-    return this.request<Produto[]>(PRODUTOS_ENDPOINTS.listar);
+    return this.request<Produto[]>(PRODUTOS_ENDPOINTS.listar, {}, 'Carregando produtos...');
   }
   static async criarProduto(produto: Produto): Promise<Produto> {
     return this.request<Produto>(PRODUTOS_ENDPOINTS.criar, {
@@ -170,7 +198,21 @@ export class ApiService {
   static async importarProdutos(file: File): Promise<import('@/types/import').ImportProdutosResponse> {
     const formData = new FormData();
     formData.append('file', file);
+    
+    // Adicionar informações do usuário se disponível
     const token = getToken();
+    if (token) {
+      try {
+        // Decodificar o token para obter o ID do usuário
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        if (payload.id) {
+          formData.append('usuarioId', payload.id.toString());
+        }
+      } catch (error) {
+        console.warn('Não foi possível extrair informações do usuário do token:', error);
+      }
+    }
+    
     const response = await fetch(`${API_BASE_URL}${PRODUTOS_ENDPOINTS.importar}`, {
       method: 'POST',
       headers: {
@@ -180,6 +222,12 @@ export class ApiService {
     });
     if (!response.ok) {
       const errorText = await response.text();
+      
+      // Tratamento específico para erro de usuário não definido
+      if (errorText.includes('not-null property references a null or transient value') && errorText.includes('usuario')) {
+        throw new Error('Erro: O sistema não conseguiu identificar o usuário para associar aos produtos. Verifique se você está logado corretamente e tente novamente.');
+      }
+      
       throw new Error(errorText);
     }
     
@@ -220,7 +268,7 @@ export class ApiService {
 
   // ===== Movimentações =====
   static async listarMovimentacoes(): Promise<Movimentacao[]> {
-    return this.request<Movimentacao[]>(MOVIMENTACOES_ENDPOINTS.listar);
+    return this.request<Movimentacao[]>(MOVIMENTACOES_ENDPOINTS.listar, {}, 'Carregando movimentações...');
   }
   static async criarMovimentacao(movimentacao: Movimentacao): Promise<Movimentacao> {
     return this.request<Movimentacao>(MOVIMENTACOES_ENDPOINTS.criar, {
@@ -254,7 +302,21 @@ export class ApiService {
   static async importarMovimentacoes(file: File): Promise<import('@/types/import').ImportMovimentacoesResponse> {
     const formData = new FormData();
     formData.append('file', file);
+    
+    // Adicionar informações do usuário se disponível
     const token = getToken();
+    if (token) {
+      try {
+        // Decodificar o token para obter o ID do usuário
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        if (payload.id) {
+          formData.append('usuarioId', payload.id.toString());
+        }
+      } catch (error) {
+        console.warn('Não foi possível extrair informações do usuário do token:', error);
+      }
+    }
+    
     const response = await fetch(`${API_BASE_URL}${MOVIMENTACOES_ENDPOINTS.importar}`, {
       method: 'POST',
       headers: {
@@ -264,6 +326,12 @@ export class ApiService {
     });
     if (!response.ok) {
       const errorText = await response.text();
+      
+      // Tratamento específico para erro de usuário não definido
+      if (errorText.includes('not-null property references a null or transient value') && errorText.includes('usuario')) {
+        throw new Error('Erro: O sistema não conseguiu identificar o usuário para associar às movimentações. Verifique se você está logado corretamente e tente novamente.');
+      }
+      
       throw new Error(errorText);
     }
     
@@ -366,7 +434,7 @@ export class ApiService {
 
   // ===== Usuários =====
   static async listarUsuarios(): Promise<Usuario[]> {
-    return this.request<Usuario[]>(USUARIOS_ENDPOINTS.listar);
+    return this.request<Usuario[]>(USUARIOS_ENDPOINTS.listar, {}, 'Carregando usuários...');
   }
   static async buscarUsuarioPorId(id: number): Promise<Usuario> {
     return this.request<Usuario>(`${USUARIOS_ENDPOINTS.buscarPorId}/${id}`);

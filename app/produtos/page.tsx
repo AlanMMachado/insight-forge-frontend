@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -45,10 +45,9 @@ export default function ProdutosPage() {
   const [novaCategoria, setNovaCategoria] = useState("");
   const [showNewCategoryDialog, setShowNewCategoryDialog] = useState(false); // Novo estado para o diálogo de nova categoria
   const { toast } = useToast()
-  const [currency, setCurrency] = useState("BRL"); // Adicionado estado para o tipo de moeda
 
   // Atualizar loadProdutos para setar hasSearched
-  const loadProdutos = async () => {
+  const loadProdutos = useCallback(async () => {
     try {
       setLoading(true)
       const data = await ApiService.listarProdutos()
@@ -63,7 +62,7 @@ export default function ProdutosPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [toast])
 
   // Atualizar searchProdutos para setar hasSearched
   const searchProdutos = async () => {
@@ -220,7 +219,7 @@ export default function ProdutosPage() {
   const categoriasUnicas = Array.from(new Set(produtos.map(p => p.categoria).filter(Boolean)))
 
   // Função para carregar categorias
-  const loadCategorias = async () => {
+  const loadCategorias = useCallback(async () => {
     try {
       const data = await ApiService.listarCategorias();
       setCategorias(data);
@@ -231,7 +230,7 @@ export default function ProdutosPage() {
         variant: "destructive",
       });
     }
-  };
+  }, [toast]);
 
   useEffect(() => {
     loadCategorias();
@@ -708,7 +707,10 @@ export default function ProdutosPage() {
         setShowCreateDialog(open);
         if (open) {
           resetForm(); // Garantir formulário limpo ao abrir o diálogo de criação
-          loadCategorias(); // Carregar categorias ao abrir o diálogo
+          // Só carrega categorias se ainda não foram carregadas
+          if (categorias.length === 0) {
+            loadCategorias();
+          }
         }
       }}>
         <DialogContent className="max-w-2xl border-[#FFD300]/20">
@@ -783,6 +785,9 @@ export default function ProdutosPage() {
                   Preço de Venda
                 </Label>
                 <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-gray-700 bg-gray-50 px-3 py-2 rounded-xl border border-gray-200 h-11 flex items-center min-w-[50px]">
+                    R$
+                  </span>
                   <Input
                     id="preco"
                     type="number"
@@ -796,19 +801,6 @@ export default function ProdutosPage() {
                     placeholder="0,00"
                     className="border-gray-200 focus:border-[#FFD300] focus:ring-[#FFD300]/20 rounded-xl h-11"
                   />
-                  <Select
-                    value={currency}
-                    onValueChange={(value) => setCurrency(value)}
-                  >
-                    <SelectTrigger className="w-20 border-gray-200 focus:border-[#FFD300] focus:ring-[#FFD300]/20 rounded-xl h-11">
-                      <SelectValue placeholder="BRL" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="BRL">BRL</SelectItem>
-                      <SelectItem value="USD">USD</SelectItem>
-                      <SelectItem value="EUR">EUR</SelectItem>
-                    </SelectContent>
-                  </Select>
                 </div>
               </div>
 
@@ -817,6 +809,9 @@ export default function ProdutosPage() {
                   Custo (Opcional)
                 </Label>
                 <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-gray-700 bg-gray-50 px-3 py-2 rounded-xl border border-gray-200 h-11 flex items-center min-w-[50px]">
+                    R$
+                  </span>
                   <Input
                     id="custo"
                     type="number"
@@ -830,9 +825,6 @@ export default function ProdutosPage() {
                     placeholder="0,00"
                     className="border-gray-200 focus:border-[#FFD300] focus:ring-[#FFD300]/20 rounded-xl h-11"
                   />
-                  <span className="text-sm text-gray-500 min-w-[50px] text-center">
-                    {currency}
-                  </span>
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
                   Campo opcional. Usado para calcular margem de lucro.
@@ -979,6 +971,9 @@ export default function ProdutosPage() {
                   Preço de Venda
                 </Label>
                 <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-gray-700 bg-gray-50 px-3 py-2 rounded-xl border border-gray-200 h-11 flex items-center min-w-[50px]">
+                    R$
+                  </span>
                   <Input
                     id="edit-preco"
                     type="number"
@@ -992,19 +987,6 @@ export default function ProdutosPage() {
                     placeholder="0.00"
                     className="border-gray-200 focus:border-[#FFD300] focus:ring-[#FFD300]/20 rounded-xl h-11"
                   />
-                  <Select
-                    value={currency}
-                    onValueChange={(value) => setCurrency(value)}
-                  >
-                    <SelectTrigger className="w-20 border-gray-200 focus:border-[#FFD300] focus:ring-[#FFD300]/20 rounded-xl h-11">
-                      <SelectValue placeholder="BRL" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="BRL">BRL</SelectItem>
-                      <SelectItem value="USD">USD</SelectItem>
-                      <SelectItem value="EUR">EUR</SelectItem>
-                    </SelectContent>
-                  </Select>
                 </div>
               </div>
 
@@ -1013,6 +995,9 @@ export default function ProdutosPage() {
                   Custo (Opcional)
                 </Label>
                 <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-gray-700 bg-gray-50 px-3 py-2 rounded-xl border border-gray-200 h-11 flex items-center min-w-[50px]">
+                    R$
+                  </span>
                   <Input
                     id="edit-custo"
                     type="number"
@@ -1026,9 +1011,6 @@ export default function ProdutosPage() {
                     placeholder="0.00"
                     className="border-gray-200 focus:border-[#FFD300] focus:ring-[#FFD300]/20 rounded-xl h-11"
                   />
-                  <span className="text-sm text-gray-500 min-w-[50px] text-center">
-                    {currency}
-                  </span>
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
                   Campo opcional. Usado para calcular margem de lucro.

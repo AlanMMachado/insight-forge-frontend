@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -47,9 +47,7 @@ export default function MovimentacoesPage() {
     produto: { id: 0 },
     tipoMovimentacao: "Compra", // Padrão atualizado para o formato correto
     quantidadeMovimentada: 1,
-    dataMovimentacao: new Date().toISOString().split('T')[0],
-    motivo: "",
-    observacoes: ""
+    dataMovimentacao: new Date().toISOString().split('T')[0]
   })
 
   const [selectedMovimentacao, setSelectedMovimentacao] = useState<MovimentacaoWithProduto | null>(null)
@@ -84,7 +82,7 @@ export default function MovimentacoesPage() {
   }
 
   // Carregar movimentações
-  const loadMovimentacoes = async () => {
+  const loadMovimentacoes = useCallback(async () => {
     try {
       setLoading(true)
       let data: Movimentacao[]
@@ -116,16 +114,16 @@ export default function MovimentacoesPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [toast])
 
   // Carregar produtos
-  const loadProdutos = async () => {
+  const loadProdutos = useCallback(async () => {
     try {
       const data = await ApiService.listarProdutos()
       setProdutos(data)
-  // extrair categorias únicas para o filtro
-  const cats = Array.from(new Set(data.map(p => p.categoria).filter(Boolean))) as string[]
-  setCategorias(cats)
+      // extrair categorias únicas para o filtro
+      const cats = Array.from(new Set(data.map(p => p.categoria).filter(Boolean))) as string[]
+      setCategorias(cats)
     } catch (error) {
       toast({
         title: "Erro ao carregar produtos",
@@ -133,7 +131,7 @@ export default function MovimentacoesPage() {
         variant: "destructive"
       })
     }
-  }
+  }, [toast])
 
   const handleCreateMovimentacao = async () => {
     if (!formData.produto.id || !formData.quantidadeMovimentada) {
@@ -301,9 +299,7 @@ export default function MovimentacoesPage() {
       produto: { id: 0 },
       tipoMovimentacao: "Compra", // Padrão atualizado
       quantidadeMovimentada: 1,
-      dataMovimentacao: new Date().toISOString().split('T')[0],
-      motivo: "",
-      observacoes: ""
+      dataMovimentacao: new Date().toISOString().split('T')[0]
     });
   };
 
@@ -345,12 +341,10 @@ export default function MovimentacoesPage() {
     setSelectedMovimentacao(mov)
     setFormData({
       produto: { id: mov.produto.id },
-  // Normaliza para apresentação no select (Compra/Venda)
-  tipoMovimentacao: mov.tipoMovimentacao?.toLowerCase() === 'compra' ? 'Compra' : 'Venda',
+      // Normaliza para apresentação no select (Compra/Venda)
+      tipoMovimentacao: mov.tipoMovimentacao?.toLowerCase() === 'compra' ? 'Compra' : 'Venda',
       quantidadeMovimentada: mov.quantidadeMovimentada,
-      dataMovimentacao: mov.dataMovimentacao,
-      motivo: mov.motivo || "",
-      observacoes: mov.observacoes || ""
+      dataMovimentacao: mov.dataMovimentacao
     })
     setShowEditDialog(true)
   }
@@ -970,32 +964,6 @@ export default function MovimentacoesPage() {
                   className="border-gray-200 focus:border-[#FFD300] focus:ring-[#FFD300]/20 rounded-xl h-11"
                 />
               </div>
-              
-              <div>
-                <Label htmlFor="motivo" className="text-sm font-medium text-gray-700 mb-2 block">
-                  Motivo
-                </Label>
-                <Input
-                  id="motivo"
-                  value={formData.motivo}
-                  onChange={(e) => setFormData({...formData, motivo: e.target.value})}
-                  placeholder="Motivo da movimentação"
-                  className="border-gray-200 focus:border-[#FFD300] focus:ring-[#FFD300]/20 rounded-xl h-11"
-                />
-              </div>
-              
-              <div className="md:col-span-2">
-                <Label htmlFor="observacoes" className="text-sm font-medium text-gray-700 mb-2 block">
-                  Observações
-                </Label>
-                <Input
-                  id="observacoes"
-                  value={formData.observacoes}
-                  onChange={(e) => setFormData({...formData, observacoes: e.target.value})}
-                  placeholder="Observações adicionais sobre a movimentação"
-                  className="border-gray-200 focus:border-[#FFD300] focus:ring-[#FFD300]/20 rounded-xl h-11"
-                />
-              </div>
             </div>
           </div>
           
@@ -1100,22 +1068,7 @@ export default function MovimentacoesPage() {
                   <p className="text-xl font-bold text-[#0C0C0C]">{selectedMovimentacao.quantidadeMovimentada || 0}</p>
                 </div>
 
-                <div className="bg-gray-50/50 p-4 rounded-xl">
-                  <Label className="text-sm font-semibold text-gray-700 mb-2 block">
-                    Motivo
-                  </Label>
-                  <p className="text-gray-900">{selectedMovimentacao.motivo || 'Não informado'}</p>
-                </div>
               </div>
-
-              {selectedMovimentacao.observacoes && (
-                <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-200/50">
-                  <Label className="text-sm font-semibold text-gray-700 mb-2 block">
-                    Observações
-                  </Label>
-                  <p className="text-gray-900 leading-relaxed">{selectedMovimentacao.observacoes}</p>
-                </div>
-              )}
             </div>
           )}
 
@@ -1227,32 +1180,6 @@ export default function MovimentacoesPage() {
                   className="border-gray-200 focus:border-[#FFD300] focus:ring-[#FFD300]/20 rounded-xl h-11"
                 />
               </div>
-              
-              <div>
-                <Label htmlFor="edit-motivo" className="text-sm font-medium text-gray-700 mb-2 block">
-                  Motivo
-                </Label>
-                <Input 
-                  id="edit-motivo" 
-                  value={formData.motivo} 
-                  onChange={(e) => setFormData({...formData, motivo: e.target.value})}
-                  className="border-gray-200 focus:border-[#FFD300] focus:ring-[#FFD300]/20 rounded-xl h-11"
-                  placeholder="Motivo da movimentação"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="edit-observacoes" className="text-sm font-medium text-gray-700 mb-2 block">
-                  Observações
-                </Label>
-                <Input 
-                  id="edit-observacoes" 
-                  value={formData.observacoes} 
-                  onChange={(e) => setFormData({...formData, observacoes: e.target.value})}
-                  className="border-gray-200 focus:border-[#FFD300] focus:ring-[#FFD300]/20 rounded-xl h-11"
-                  placeholder="Observações adicionais"
-                />
-              </div>
             </div>
           </div>
           
@@ -1260,7 +1187,7 @@ export default function MovimentacoesPage() {
             <div className="flex flex-col sm:flex-row gap-3 w-full">
               <Button 
                 variant="outline" 
-                onClick={() => setShowEditDialog(true)}
+                onClick={() => setShowEditDialog(false)}
                 className="flex-1 border-gray-300 hover:border-gray-400 hover:bg-gray-50 rounded-xl h-11"
               >
                 Cancelar
