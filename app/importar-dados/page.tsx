@@ -357,16 +357,16 @@ export default function ImportarDadosPage() {
 
   return (
     <AuthenticatedLayout>
-      <div className="p-6 space-y-6">
+      <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
         {/* Header */}
         <div className="bg-gradient-to-r from-white to-[#FFFDF0] p-6 rounded-2xl border border-[#FFD300]/20 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
               <div className="p-3 bg-gradient-to-br from-[#FFD300] to-[#E6BD00] rounded-xl shadow-md">
                 <Upload className="h-8 w-8 text-[#0C0C0C]" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-[#0C0C0C] mb-1">Importar Dados</h1>
+                <h1 className="text-2xl sm:text-3xl font-bold text-[#0C0C0C] mb-1">Importar Dados</h1>
                 <p className="text-gray-600 flex items-center gap-2">
                   <span className="w-2 h-2 bg-[#FFD300] rounded-full"></span>
                   Importe produtos ou movimentações através de planilhas
@@ -376,7 +376,7 @@ export default function ImportarDadosPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Card Principal - Upload */}
           <div className="lg:col-span-2">
             <Card className="border-[#FFD300]/20 shadow-sm hover:shadow-md transition-shadow duration-200">
@@ -475,10 +475,10 @@ export default function ImportarDadosPage() {
                           <Upload className={`w-8 h-8 ${isDragOver ? "text-[#FFD300]" : "text-muted-foreground"}`} />
                         </div>
                         <div>
-                          <p className={`text-lg font-medium mb-2 ${isDragOver ? "text-[#FFD300]" : ""}`}>
+                          <p className={`text-base sm:text-lg font-medium mb-2 ${isDragOver ? "text-[#FFD300]" : ""}`}>
                             {isDragOver ? "Solte o arquivo aqui" : "Arraste e solte seu arquivo"}
                           </p>
-                          <p className="text-muted-foreground mb-4">ou</p>
+                          <p className="text-sm sm:text-base text-muted-foreground mb-4">ou</p>
                           <Button
                             variant="outline"
                             type="button"
@@ -601,8 +601,8 @@ export default function ImportarDadosPage() {
                   {importType === "produtos" ? (
                     <div className="space-y-3">
                       <div className="p-3 bg-muted/50 rounded-lg">
-                        <div className="font-medium mb-2">Colunas Obrigatórias:</div>
-                        <ul className="space-y-1 text-sm">
+                        <div className="font-medium mb-2 text-sm sm:text-base">Colunas Obrigatórias:</div>
+                        <ul className="space-y-1 text-xs sm:text-sm">
                           <li><span className="font-medium">Nome:</span> Nome do produto</li>
                           <li><span className="font-medium">Preço:</span> Valor (ex: 29.99)</li>
                           <li><span className="font-medium">Custo:</span> Valor (ex: 10.99)</li>
@@ -615,8 +615,8 @@ export default function ImportarDadosPage() {
                   ) : (
                     <div className="space-y-3">
                       <div className="p-3 bg-muted/50 rounded-lg">
-                        <div className="font-medium mb-2">Colunas Obrigatórias:</div>
-                        <ul className="space-y-1 text-sm">
+                        <div className="font-medium mb-2 text-sm sm:text-base">Colunas Obrigatórias:</div>
+                        <ul className="space-y-1 text-xs sm:text-sm">
                           <li><span className="font-medium">Nome do Produto:</span> Nome completo</li>
                           <li><span className="font-medium">Quantidade:</span> Número inteiro</li>
                           <li><span className="font-medium">Data:</span> Formato AAAA-MM-DD</li>
@@ -629,8 +629,8 @@ export default function ImportarDadosPage() {
                 
                 <div className="pt-4 border-t">
                   <p className="text-xs text-muted-foreground mb-3 flex items-start gap-2">
-                    <span className="text-lg">💡</span>
-                    <span>Use o template abaixo para garantir que seu arquivo está no formato correto.</span>
+                    <span className="text-base sm:text-lg">💡</span>
+                    <span className="text-xs sm:text-sm">Use o template abaixo para garantir que seu arquivo está no formato correto.</span>
                   </p>
                   <Button 
                     variant="outline"

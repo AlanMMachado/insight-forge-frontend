@@ -380,16 +380,16 @@ export default function MovimentacoesPage() {
 
   return (
     <AuthenticatedLayout>
-      <div className="p-6 space-y-6">
+      <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
       {/* Header */}
       <div className="bg-gradient-to-r from-white to-[#FFFDF0] p-6 rounded-2xl border border-[#FFD300]/20 shadow-sm">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
             <div className="p-3 bg-gradient-to-br from-[#FFD300] to-[#E6BD00] rounded-xl shadow-md">
               <MoveHorizontal className="h-8 w-8 text-[#0C0C0C]" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-[#0C0C0C] mb-1">Movimentações</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold text-[#0C0C0C] mb-1">Movimentações</h1>
               <p className="text-gray-600 flex items-center gap-2">
                 <span className="w-2 h-2 bg-[#FFD300] rounded-full"></span>
                 Gerencie o fluxo dos seus produtos
@@ -397,7 +397,7 @@ export default function MovimentacoesPage() {
             </div>
           </div>
           
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
             <Button 
               onClick={() => router.push('/importar-dados')} 
               variant="outline" 
@@ -491,7 +491,7 @@ export default function MovimentacoesPage() {
       {/* Card de Movimentações - modificado */}
       <Card className="border-[#FFD300]/20 shadow-sm">
         <CardHeader className="bg-gradient-to-r from-[#FFFDF0] to-white">
-          <div className="flex flex-row items-center justify-between">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-[#FFD300]/20 rounded-lg">
                 <MoveHorizontal className="h-5 w-5 text-[#0C0C0C]" />
@@ -505,7 +505,7 @@ export default function MovimentacoesPage() {
                 </CardDescription>
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Button
                 onClick={() => setShowExportDialog(true)}
                 variant="outline"
@@ -763,9 +763,9 @@ export default function MovimentacoesPage() {
                       <Table>
                         <TableHeader>
                           <TableRow className="bg-gray-50/50 border-b-2 border-[#FFD300]/20">
-                            <TableHead className="font-semibold text-gray-700">Produto</TableHead>
+                            <TableHead className="min-w-[120px] font-semibold text-gray-700">Produto</TableHead>
                             <TableHead 
-                              className="cursor-pointer select-none hover:bg-[#FFD300]/10 transition-colors font-semibold text-gray-700 rounded-lg"
+                              className="hidden md:table-cell cursor-pointer select-none hover:bg-[#FFD300]/10 transition-colors font-semibold text-gray-700 rounded-lg min-w-[100px]"
                               onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
                             >
                               <div className="flex items-center gap-2">
@@ -777,9 +777,9 @@ export default function MovimentacoesPage() {
                                 )}
                               </div>
                             </TableHead>
-                            <TableHead className="font-semibold text-gray-700">Tipo</TableHead>
-                            <TableHead className="text-center font-semibold text-gray-700">Quantidade</TableHead>
-                            <TableHead className="text-center font-semibold text-gray-700">Ações</TableHead>
+                            <TableHead className="hidden lg:table-cell font-semibold text-gray-700 min-w-[80px]">Tipo</TableHead>
+                            <TableHead className="text-center font-semibold text-gray-700 min-w-[80px]">Quantidade</TableHead>
+                            <TableHead className="text-center min-w-[90px] font-semibold text-gray-700">Ações</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -796,9 +796,20 @@ export default function MovimentacoesPage() {
                                   <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-md inline-block">
                                     {movimentacao.produtoCompleto?.categoria || '-'}
                                   </div>
+                                  <div className="text-xs text-gray-500 md:hidden mt-1">
+                                    {(() => {
+                                      const parsedDate = parseISO(movimentacao.dataMovimentacao);
+                                      return isValid(parsedDate)
+                                        ? format(parsedDate, "dd/MM/yyyy", { locale: ptBR })
+                                        : "-";
+                                    })()}
+                                  </div>
+                                  <div className="text-xs text-gray-500 lg:hidden">
+                                    {movimentacao.tipoMovimentacao?.toLowerCase() === 'compra' ? 'Compra' : 'Venda'}
+                                  </div>
                                 </div>
                               </TableCell>
-                              <TableCell className="py-4">
+                              <TableCell className="hidden md:table-cell py-4">
                                 <div className="text-gray-700">
                                   {(() => {
                                     const parsedDate = parseISO(movimentacao.dataMovimentacao);
@@ -808,7 +819,7 @@ export default function MovimentacoesPage() {
                                   })()}
                                 </div>
                               </TableCell>
-                              <TableCell className="py-4">
+                              <TableCell className="hidden lg:table-cell py-4">
                                 <Badge 
                                   variant={movimentacao.tipoMovimentacao?.toLowerCase() === 'compra' ? 'default' : 'secondary'}
                                   className={
@@ -871,8 +882,8 @@ export default function MovimentacoesPage() {
 
       {/* Dialog para Criar Movimentação */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent className="max-w-2xl border-[#FFD300]/20">
-          <DialogHeader className="bg-gradient-to-r from-[#FFFDF0] to-white p-6 -m-6 mb-6 rounded-t-lg">
+        <DialogContent className="max-w-2xl w-[95vw] sm:w-full border-[#FFD300]/20 shadow-xl rounded-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="bg-gradient-to-r from-[#FFFDF0] to-white p-4 sm:p-6 -m-4 sm:-m-6 mb-4 sm:mb-6 rounded-t-2xl border-b border-[#FFD300]/20">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-[#FFD300]/20 rounded-lg">
                 <Plus className="h-5 w-5 text-[#0C0C0C]" />
@@ -967,7 +978,7 @@ export default function MovimentacoesPage() {
             </div>
           </div>
           
-          <DialogFooter className="bg-gray-50/50 p-6 -m-6 mt-6 rounded-b-lg">
+          <DialogFooter className="bg-gray-50/50 p-4 sm:p-6 -m-4 sm:-m-6 mt-4 sm:mt-6 rounded-b-2xl border-t border-[#FFD300]/20">
             <div className="flex flex-col sm:flex-row gap-3 w-full">
               <Button 
                 variant="outline" 
@@ -991,8 +1002,8 @@ export default function MovimentacoesPage() {
       
       {/* Dialog para Visualizar Movimentação */}
       <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
-        <DialogContent className="max-w-2xl border-[#FFD300]/20">
-          <DialogHeader className="bg-gradient-to-r from-[#FFFDF0] to-white p-6 -m-6 mb-6 rounded-t-lg">
+        <DialogContent className="max-w-2xl w-[95vw] sm:w-full border-[#FFD300]/20 shadow-xl rounded-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="bg-gradient-to-r from-[#FFFDF0] to-white p-4 sm:p-6 -m-4 sm:-m-6 mb-4 sm:mb-6 rounded-t-2xl border-b border-[#FFD300]/20">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-[#FFD300]/20 rounded-lg">
                 <Eye className="h-5 w-5 text-[#0C0C0C]" />
@@ -1072,7 +1083,7 @@ export default function MovimentacoesPage() {
             </div>
           )}
 
-          <DialogFooter className="bg-gray-50/50 p-6 -m-6 mt-6 rounded-b-lg">
+          <DialogFooter className="bg-gray-50/50 p-4 sm:p-6 -m-4 sm:-m-6 mt-4 sm:mt-6 rounded-b-2xl border-t border-[#FFD300]/20">
             <Button 
               variant="outline" 
               onClick={() => setShowViewDialog(false)}
@@ -1087,8 +1098,8 @@ export default function MovimentacoesPage() {
 
       {/* Dialog para Editar Movimentação */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="max-w-2xl border-[#FFD300]/20">
-          <DialogHeader className="bg-gradient-to-r from-[#FFFDF0] to-white p-6 -m-6 mb-6 rounded-t-lg">
+        <DialogContent className="max-w-2xl w-[95vw] sm:w-full border-[#FFD300]/20 shadow-xl rounded-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="bg-gradient-to-r from-[#FFFDF0] to-white p-4 sm:p-6 -m-4 sm:-m-6 mb-4 sm:mb-6 rounded-t-2xl border-b border-[#FFD300]/20">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-[#FFD300]/20 rounded-lg">
                 <Edit className="h-5 w-5 text-[#0C0C0C]" />
@@ -1183,7 +1194,7 @@ export default function MovimentacoesPage() {
             </div>
           </div>
           
-          <DialogFooter className="bg-gray-50/50 p-6 -m-6 mt-6 rounded-b-lg">
+          <DialogFooter className="bg-gray-50/50 p-4 sm:p-6 -m-4 sm:-m-6 mt-4 sm:mt-6 rounded-b-2xl border-t border-[#FFD300]/20">
             <div className="flex flex-col sm:flex-row gap-3 w-full">
               <Button 
                 variant="outline" 
@@ -1206,8 +1217,8 @@ export default function MovimentacoesPage() {
       
       {/* Dialog para Exportar Movimentações */}
       <Dialog open={showExportDialog} onOpenChange={setShowExportDialog}>
-        <DialogContent className="max-w-xl">
-          <DialogHeader className="text-center pb-2">
+        <DialogContent className="max-w-xl w-[95vw] sm:w-full border-[#FFD300]/20 shadow-xl rounded-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="text-center pb-2 p-4 sm:p-6 -m-4 sm:-m-6 mb-4 sm:mb-6 rounded-t-2xl border-b border-[#FFD300]/20 bg-gradient-to-r from-[#FFFDF0] to-white">
             <DialogTitle className="flex items-center justify-center gap-2 text-xl">
               <span className="text-2xl">📊</span>
               Exportar Movimentações
@@ -1406,11 +1417,11 @@ export default function MovimentacoesPage() {
             </div>
           </div>
 
-          <DialogFooter className="gap-3 pt-6">
+          <DialogFooter className="gap-3 pt-6 p-4 sm:p-6 -m-4 sm:-m-6 mt-4 sm:mt-6 rounded-b-2xl border-t border-[#FFD300]/20 bg-gray-50/50">
             <Button 
               variant="outline" 
               onClick={() => setShowExportDialog(false)}
-              className="flex-1 border-gray-300 hover:bg-gray-50"
+              className="flex-1 border-gray-300 hover:bg-gray-50 rounded-xl h-11"
             >
               Cancelar
             </Button>
@@ -1436,7 +1447,7 @@ export default function MovimentacoesPage() {
                 else if (exportOption === 'periodo') await performExport('periodo', { dataInicio: exportDataInicio, dataFim: exportDataFim })
                 else await performExport('all')
               }}
-              className="flex-1 bg-[#FFD300] text-[#0C0C0C] hover:bg-[#E6BD00] shadow-md hover:shadow-lg transition-all duration-200 font-medium"
+              className="flex-1 bg-[#FFD300] text-[#0C0C0C] hover:bg-[#E6BD00] shadow-md hover:shadow-lg transition-all duration-200 font-medium rounded-xl h-11"
               disabled={exportLoading}
             >
               {exportLoading ? (

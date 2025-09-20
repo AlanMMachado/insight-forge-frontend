@@ -7,7 +7,7 @@ import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/contexts/auth-context"
 import RequireAuth from "@/components/require-auth"
-import { LogOut, User } from "lucide-react"
+import { LogOut, User, BarChart3 } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -57,7 +57,8 @@ export default function AuthenticatedLayout({ children, allowedRoles }: Authenti
       >
         <AppSidebar />
         <SidebarInset>
-          <header className="flex h-16 shrink-0 items-center gap-2 border-b border-[#CFCFCF] px-4 bg-white">
+          {/* Header apenas para desktop */}
+          <header className="hidden lg:flex h-16 shrink-0 items-center gap-2 border-b border-[#CFCFCF] px-4 bg-white">
             <SidebarTrigger className="-ml-1 text-[#000000] hover:bg-[#F8F8F8]" />
             <div className="h-4 w-px bg-[#CFCFCF]" />
             <h2 className="text-lg font-semibold text-[#000000]">Insight Forge</h2>
@@ -90,7 +91,46 @@ export default function AuthenticatedLayout({ children, allowedRoles }: Authenti
               </DropdownMenu>
             </div>
           </header>
-          <main className="flex-1 bg-[#F8F8F8] min-h-screen overflow-auto">
+
+          {/* Header Mobile */}
+          <header className="lg:hidden flex h-16 shrink-0 items-center gap-2 border-b border-[#CFCFCF] px-4 bg-white">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center w-8 h-8 bg-amber-400 rounded">
+                <BarChart3 className="w-5 h-5 text-gray-900" />
+              </div>
+              <h2 className="text-lg font-semibold text-[#000000]">Insight Forge</h2>
+            </div>
+            
+            <div className="ml-auto flex items-center gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                    <User className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56" align="end" forceMount>
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none">{user?.nome}</p>
+                      <p className="text-xs leading-none text-muted-foreground">
+                        {user?.email}
+                      </p>
+                      <p className="text-xs leading-none text-muted-foreground">
+                        Role: {user?.role}
+                      </p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={logout} className="cursor-pointer">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Sair</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </header>
+
+          <main className="flex-1 bg-[#F8F8F8] min-h-screen overflow-auto pb-16 lg:pb-0 overflow-x-hidden">
             {children}
           </main>
         </SidebarInset>

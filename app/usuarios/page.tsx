@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Users, Search, Eye, Edit, Trash2, Plus, Shield } from "lucide-react"
+import { Plus, Search, Edit, Trash2, Eye, Filter, Users, User, Shield } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { ApiService, Usuario } from "@/lib/api"
 import { format, parseISO } from "date-fns"
@@ -293,16 +293,16 @@ export default function UsuariosPage() {
 
       {/* Conteúdo da página - acessível apenas para administradores */}
       {!authLoading && user && user.role === 'ADMIN' && (
-        <div className="p-6 space-y-6">
+        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
         {/* Header */}
         <div className="bg-gradient-to-r from-white to-[#FFFDF0] p-6 rounded-2xl border border-[#FFD300]/20 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
               <div className="p-3 bg-gradient-to-br from-[#FFD300] to-[#E6BD00] rounded-xl shadow-md">
                 <Users className="h-8 w-8 text-[#0C0C0C]" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-[#0C0C0C] mb-1">Usuários</h1>
+                <h1 className="text-2xl sm:text-3xl font-bold text-[#0C0C0C] mb-1">Usuários</h1>
                 <p className="text-gray-600 flex items-center gap-2">
                   <span className="w-2 h-2 bg-[#FFD300] rounded-full"></span>
                   Gerencie os usuários do sistema
@@ -310,7 +310,7 @@ export default function UsuariosPage() {
               </div>
             </div>
             
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
               <Button 
                 onClick={() => setShowCreateDialog(true)} 
                 className="bg-gradient-to-r from-[#FFD300] to-[#E6BD00] text-[#0C0C0C] hover:from-[#E6BD00] hover:to-[#FFD300] shadow-md hover:shadow-lg transition-all duration-200 font-medium"
@@ -322,7 +322,7 @@ export default function UsuariosPage() {
           </div>
         </div>
 
-        {/* Controles de Busca */}
+        {/* Card de Busca - simplificado */}
         <Card className="border-[#FFD300]/20 shadow-sm hover:shadow-md transition-shadow duration-200">
           <CardHeader className="bg-gradient-to-r from-[#FFFDF0] to-white">
             <div className="flex items-center gap-3">
@@ -332,16 +332,18 @@ export default function UsuariosPage() {
               <div>
                 <CardTitle className="text-lg text-[#0C0C0C]">Buscar Usuários</CardTitle>
                 <CardDescription className="text-gray-600">
-                  Use os filtros abaixo para encontrar usuários específicos
+                  Use os filtros para encontrar usuários específicos
                 </CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex gap-4 items-end">
-              {/* Campo de busca por nome */}
-              <div className="flex-1 max-w-xs">
-                <Label htmlFor="search" className="text-sm font-medium text-gray-700 mb-2 block">Nome do Usuário</Label>
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 items-end">
+              {/* Campo de busca */}
+              <div className="lg:col-span-5">
+                <Label htmlFor="search" className="text-sm font-medium text-gray-700 mb-2 block">
+                  Nome do Usuário
+                </Label>
                 <div className="relative">
                   <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <Input
@@ -355,33 +357,34 @@ export default function UsuariosPage() {
                 </div>
               </div>
               
-              {/* Botão de buscar */}
-              <Button
-                onClick={() => {
-                  setHasSearched(true)
-                  searchUsuarios()
-                }}
-                disabled={!searchTerm.trim() || loading}
-                className="bg-gradient-to-r from-[#FFD300] to-[#E6BD00] text-[#0C0C0C] hover:from-[#E6BD00] hover:to-[#FFD300] shadow-md hover:shadow-lg transition-all duration-200 font-medium h-11 rounded-xl"
-              >
-                <Search className="w-4 h-4 mr-2" />
-                {loading ? 'Buscando...' : 'Buscar'}
-              </Button>
-              {/* Botão de listar todos, posicionado à direita do Buscar */}
-              <Button
-                onClick={() => {
-                  setHasSearched(true)
-                  setSearchTerm("")
-                  setFilterRole('ALL')
-                  loadUsuarios()
-                }}
-                disabled={loading}
-                variant="outline"
-                className="h-11 border-[#FFD300]/50 hover:border-[#FFD300] hover:bg-[#FFFDF0] transition-all duration-200 rounded-xl shadow-sm hover:shadow-md"
-              >
-                <Users className="w-4 h-4 mr-2 text-[#0C0C0C]" />
-                Todos os Usuários
-              </Button>
+              {/* Botões de ação */}
+              <div className="lg:col-span-7 flex flex-col sm:flex-row gap-2 sm:gap-3 items-stretch sm:items-end">
+                <Button
+                  onClick={() => {
+                    setHasSearched(true)
+                    searchUsuarios()
+                  }}
+                  disabled={!searchTerm.trim() || loading}
+                  className="bg-gradient-to-r from-[#FFD300] to-[#E6BD00] text-[#0C0C0C] hover:from-[#E6BD00] hover:to-[#FFD300] flex-1 h-11 shadow-md hover:shadow-lg transition-all duration-200 font-medium rounded-xl"
+                >
+                  <Search className="w-4 h-4 mr-2" />
+                  {loading ? 'Buscando...' : 'Buscar'}
+                </Button>
+                <Button
+                  onClick={() => {
+                    setHasSearched(true)
+                    setSearchTerm("")
+                    setFilterRole('ALL')
+                    loadUsuarios()
+                  }}
+                  disabled={loading}
+                  variant="outline"
+                  className="flex-1 h-11 border-[#FFD300]/50 hover:border-[#FFD300] hover:bg-[#FFFDF0] transition-all duration-200 rounded-xl"
+                >
+                  <Users className="w-4 h-4 mr-2 text-[#0C0C0C]" />
+                  Todos
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -403,40 +406,32 @@ export default function UsuariosPage() {
                   </CardDescription>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                {/* Filtro por tipo de usuário */}
-                <div className="w-48">
-                  <Label htmlFor="filter-role" className="text-sm text-gray-700 mb-1 block">Filtrar por tipo</Label>
-                  <Select
-                    value={filterRole}
-                    onValueChange={(value: 'ALL' | 'USER' | 'ADMIN') => {
-                      setFilterRole(value)
-                      filterUsuarios(value)
-                    }}
-                  >
-                    <SelectTrigger className="h-9 border-gray-200 focus:border-[#FFD300] focus:ring-[#FFD300]/20 rounded-xl">
-                      <SelectValue placeholder="Selecione um tipo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="ALL">Todos</SelectItem>
-                      <SelectItem value="USER">Usuário</SelectItem>
-                      <SelectItem value="ADMIN">Administrador</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setSearchTerm("")
+                    setFilterRole('ALL')
+                    loadUsuarios()
+                  }}
+                  className="border-[#FFD300]/50 hover:border-[#FFD300] hover:bg-[#FFFDF0] transition-all duration-200 rounded-xl"
+                >
+                  <Filter className="w-4 h-4 mr-2" />
+                  Limpar Filtros
+                </Button>
               </div>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             {!hasSearched ? (
-              <div className="py-16">
+              <div className="py-16 px-6">
                 <div className="text-center">
                   <div className="mx-auto w-20 h-20 bg-gradient-to-br from-[#FFD300]/20 to-[#FFD300]/10 rounded-full flex items-center justify-center mb-6">
                     <Search className="h-10 w-10 text-[#FFD300]" />
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Use a busca para visualizar usuários</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Use a busca ou os filtros</h3>
                   <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                    Digite o nome do usuário ou clique em "Todos os Usuários" para listar todos.
+                    Digite o nome do usuário ou use os filtros para visualizar usuários do sistema.
                   </p>
                   <Button
                     onClick={() => setShowCreateDialog(true)}
@@ -450,119 +445,138 @@ export default function UsuariosPage() {
             ) : loading ? (
               <div className="text-center py-8">Carregando usuários...</div>
             ) : usuarios.length === 0 ? (
-              <div className="py-16">
+              <div className="py-16 px-6">
                 <div className="text-center">
                   <div className="mx-auto w-20 h-20 bg-gradient-to-br from-[#FFD300]/20 to-[#FFD300]/10 rounded-full flex items-center justify-center mb-6">
                     <Users className="h-10 w-10 text-[#FFD300]" />
                   </div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">Nenhum usuário encontrado</h3>
                   <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                    Tente ajustar os filtros ou criar um novo usuário.
+                    Comece criando seu primeiro usuário no sistema.
                   </p>
-                  <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                    <Button
-                      onClick={() => setShowCreateDialog(true)}
-                      className="bg-gradient-to-r from-[#FFD300] to-[#E6BD00] text-[#0C0C0C] hover:from-[#E6BD00] hover:to-[#FFD300] shadow-md hover:shadow-lg transition-all duration-200 font-medium rounded-xl"
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Novo Usuário
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        setSearchTerm("")
-                        setFilterRole('ALL')
-                        loadUsuarios()
-                      }}
-                      variant="outline"
-                      className="border-[#FFD300]/50 hover:border-[#FFD300] hover:bg-[#FFFDF0] transition-all duration-200 rounded-xl"
-                    >
-                      <Users className="w-4 h-4 mr-2 text-[#0C0C0C]" />
-                      Limpar Filtros
-                    </Button>
-                  </div>
+                  <Button
+                    onClick={() => setShowCreateDialog(true)}
+                    className="bg-gradient-to-r from-[#FFD300] to-[#E6BD00] text-[#0C0C0C] hover:from-[#E6BD00] hover:to-[#FFD300] shadow-md hover:shadow-lg transition-all duration-200 font-medium rounded-xl"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Criar Usuário
+                  </Button>
                 </div>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-gray-50/50 border-b-2 border-[#FFD300]/20">
-                      <TableHead className="font-semibold text-gray-700">Nome</TableHead>
-                      <TableHead className="font-semibold text-gray-700">Email</TableHead>
-                      <TableHead className="font-semibold text-gray-700">Tipo</TableHead>
-                      <TableHead className="font-semibold text-gray-700">Data de Criação</TableHead>
-                      <TableHead className="text-center font-semibold text-gray-700">Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {usuarios.map((usuario, index) => (
-                      <TableRow 
-                        key={usuario.id}
-                        className={`hover:bg-[#FFFDF0] transition-colors ${
-                          index % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'
-                        }`}
-                      >
-                        <TableCell>
-                          <div className="font-medium text-gray-900">{usuario.nome}</div>
-                        </TableCell>
-                        <TableCell>
-                          <span className="text-gray-700">{usuario.email}</span>
-                        </TableCell>
-                        <TableCell>
-                          {getRoleBadge(usuario.role)}
-                        </TableCell>
-                        <TableCell>
-                          <span className="text-gray-700">
-                            {(usuario.createdAt || usuario.dataCriacao)
-                              ? format(parseISO(usuario.createdAt || usuario.dataCriacao!), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })
-                              : "-"
-                            }
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex justify-center space-x-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => openViewDialog(usuario)}
-                              className="h-8 w-8 p-0 hover:bg-blue-100 hover:text-blue-600 transition-colors rounded-lg"
-                              title="Visualizar"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => openEditDialog(usuario)}
-                              className="h-8 w-8 p-0 hover:bg-yellow-100 hover:text-yellow-600 transition-colors rounded-lg"
-                              title="Editar"
-                            >
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => usuario.id && handleDeleteUsuario(usuario.id)}
-                              className="h-8 w-8 p-0 text-red-600 hover:bg-red-100 hover:text-red-700 transition-colors rounded-lg"
-                              title="Excluir"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+              <>
+                {/* Filtros Rápidos - Apenas quando há usuários */}
+                {usuarios.length > 0 && (
+                  <div className="space-y-4 px-6 pt-6 pb-4 border-b border-gray-100">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                      <div className="flex items-center gap-2">
+                        <Filter className="h-4 w-4 text-gray-500" />
+                        <span className="text-sm font-medium text-gray-700">Filtros Rápidos</span>
+                      </div>
+                      <div className="flex flex-col sm:flex-row gap-3 flex-1">
+                        <div className="flex-1 min-w-0">
+                          <Select
+                            value={filterRole}
+                            onValueChange={(value: 'ALL' | 'USER' | 'ADMIN') => {
+                              setFilterRole(value)
+                              filterUsuarios(value)
+                            }}
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Tipo de usuário" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="ALL">Todos os tipos</SelectItem>
+                              <SelectItem value="USER">Usuário</SelectItem>
+                              <SelectItem value="ADMIN">Administrador</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Tabela */}
+                <div className="px-0 py-0">
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader className="bg-gray-50/50">
+                        <TableRow className="hover:bg-gray-50/50">
+                          <TableHead className="font-semibold text-gray-900 text-left min-w-[140px]">Nome</TableHead>
+                          <TableHead className="font-semibold text-gray-900 text-left min-w-[120px] hidden md:table-cell">Email</TableHead>
+                          <TableHead className="font-semibold text-gray-900 text-left min-w-[80px]">Tipo</TableHead>
+                          <TableHead className="font-semibold text-gray-900 text-left min-w-[120px] hidden lg:table-cell">Data de Criação</TableHead>
+                          <TableHead className="font-semibold text-gray-900 text-center min-w-[90px]">Ações</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {usuarios.map((usuario) => (
+                          <TableRow key={usuario.id} className="border-b border-gray-100 hover:bg-gray-50/30 transition-colors">
+                            <TableCell className="font-medium text-gray-900">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 bg-gradient-to-br from-[#FFD300]/20 to-[#FFD300]/10 rounded-full flex items-center justify-center">
+                                  <User className="w-4 h-4 text-[#B8860B]" />
+                                </div>
+                                <div>
+                                  <div className="font-medium text-gray-900">{usuario.nome}</div>
+                                  <div className="text-sm text-gray-500 md:hidden">{usuario.email}</div>
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-gray-600 hidden md:table-cell">{usuario.email}</TableCell>
+                            <TableCell>
+                              {getRoleBadge(usuario.role)}
+                            </TableCell>
+                            <TableCell className="text-gray-600 hidden lg:table-cell">
+                              {(usuario.createdAt || usuario.dataCriacao)
+                                ? format(parseISO(usuario.createdAt || usuario.dataCriacao!), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })
+                                : "-"
+                              }
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <div className="flex items-center justify-center gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => openViewDialog(usuario)}
+                                  className="h-8 w-8 p-0 hover:bg-[#FFD300]/10"
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => openEditDialog(usuario)}
+                                  className="h-8 w-8 p-0 hover:bg-[#FFD300]/10"
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => usuario.id && handleDeleteUsuario(usuario.id)}
+                                  className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              </>
             )}
           </CardContent>
         </Card>
 
         {/* Dialog para Criar Usuário */}
         <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-          <DialogContent className="max-w-2xl border-[#FFD300]/20 shadow-xl rounded-2xl">
-            <DialogHeader className="bg-gradient-to-r from-[#FFFDF0] to-white p-6 -m-6 mb-6 rounded-t-2xl border-b border-[#FFD300]/20">
+          <DialogContent className="max-w-2xl w-[95vw] sm:w-full border-[#FFD300]/20 shadow-xl rounded-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader className="bg-gradient-to-r from-[#FFFDF0] to-white p-4 sm:p-6 -m-4 sm:-m-6 mb-4 sm:mb-6 rounded-t-2xl border-b border-[#FFD300]/20">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-[#FFD300]/20 rounded-lg">
                   <Plus className="h-5 w-5 text-[#0C0C0C]" />
@@ -629,18 +643,18 @@ export default function UsuariosPage() {
               </div>
             </div>
             
-            <DialogFooter className="gap-3">
+            <DialogFooter className="flex-col sm:flex-row gap-3 bg-gray-50/50 p-4 sm:p-6 -m-4 sm:-m-6 mt-4 sm:mt-6 rounded-b-2xl border-t border-[#FFD300]/20">
               <Button 
                 variant="outline" 
                 onClick={() => setShowCreateDialog(false)}
-                className="border-[#FFD300]/50 hover:border-[#FFD300] hover:bg-[#FFFDF0] transition-all duration-200 rounded-xl"
+                className="w-full sm:w-auto border-[#FFD300]/50 hover:border-[#FFD300] hover:bg-[#FFFDF0] transition-all duration-200 rounded-xl h-11"
               >
                 Cancelar
               </Button>
               <Button 
                 onClick={handleCreateUsuario}
                 disabled={!formData.nome.trim() || !formData.email.trim() || !formData.password.trim()}
-                className="bg-gradient-to-r from-[#FFD300] to-[#E6BD00] text-[#0C0C0C] hover:from-[#E6BD00] hover:to-[#FFD300] shadow-md hover:shadow-lg transition-all duration-200 font-medium rounded-xl"
+                className="w-full sm:w-auto bg-gradient-to-r from-[#FFD300] to-[#E6BD00] text-[#0C0C0C] hover:from-[#E6BD00] hover:to-[#FFD300] shadow-md hover:shadow-lg transition-all duration-200 font-medium rounded-xl h-11"
               >
                 Criar Usuário
               </Button>
@@ -650,8 +664,8 @@ export default function UsuariosPage() {
 
         {/* Dialog para Editar Usuário */}
         <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-          <DialogContent className="max-w-2xl border-[#FFD300]/20 shadow-xl rounded-2xl">
-            <DialogHeader className="bg-gradient-to-r from-[#FFFDF0] to-white p-6 -m-6 mb-6 rounded-t-2xl border-b border-[#FFD300]/20">
+          <DialogContent className="max-w-2xl w-[95vw] sm:w-full border-[#FFD300]/20 shadow-xl rounded-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader className="bg-gradient-to-r from-[#FFFDF0] to-white p-4 sm:p-6 -m-4 sm:-m-6 mb-4 sm:mb-6 rounded-t-2xl border-b border-[#FFD300]/20">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-[#FFD300]/20 rounded-lg">
                   <Edit className="h-5 w-5 text-[#0C0C0C]" />
@@ -706,18 +720,18 @@ export default function UsuariosPage() {
               </div>
             </div>
             
-            <DialogFooter className="gap-3">
+            <DialogFooter className="flex-col sm:flex-row gap-3 bg-gray-50/50 p-4 sm:p-6 -m-4 sm:-m-6 mt-4 sm:mt-6 rounded-b-2xl border-t border-[#FFD300]/20">
               <Button 
                 variant="outline" 
                 onClick={() => setShowEditDialog(false)}
-                className="border-[#FFD300]/50 hover:border-[#FFD300] hover:bg-[#FFFDF0] transition-all duration-200 rounded-xl"
+                className="w-full sm:w-auto border-[#FFD300]/50 hover:border-[#FFD300] hover:bg-[#FFFDF0] transition-all duration-200 rounded-xl h-11"
               >
                 Cancelar
               </Button>
               <Button 
                 onClick={handleUpdateUsuario}
                 disabled={!editFormData.nome.trim() || !editFormData.email.trim()}
-                className="bg-gradient-to-r from-[#FFD300] to-[#E6BD00] text-[#0C0C0C] hover:from-[#E6BD00] hover:to-[#FFD300] shadow-md hover:shadow-lg transition-all duration-200 font-medium rounded-xl"
+                className="w-full sm:w-auto bg-gradient-to-r from-[#FFD300] to-[#E6BD00] text-[#0C0C0C] hover:from-[#E6BD00] hover:to-[#FFD300] shadow-md hover:shadow-lg transition-all duration-200 font-medium rounded-xl h-11"
               >
                 Salvar Alterações
               </Button>
@@ -727,8 +741,8 @@ export default function UsuariosPage() {
 
         {/* Dialog para Visualizar Usuário */}
         <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
-          <DialogContent className="max-w-2xl border-[#FFD300]/20 shadow-xl rounded-2xl">
-            <DialogHeader className="bg-gradient-to-r from-[#FFFDF0] to-white p-6 -m-6 mb-6 rounded-t-2xl border-b border-[#FFD300]/20">
+          <DialogContent className="max-w-2xl w-[95vw] sm:w-full border-[#FFD300]/20 shadow-xl rounded-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader className="bg-gradient-to-r from-[#FFFDF0] to-white p-4 sm:p-6 -m-4 sm:-m-6 mb-4 sm:mb-6 rounded-t-2xl border-b border-[#FFD300]/20">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-[#FFD300]/20 rounded-lg">
                   <Eye className="h-5 w-5 text-[#0C0C0C]" />
@@ -775,7 +789,7 @@ export default function UsuariosPage() {
               <Button 
                 variant="outline" 
                 onClick={() => setShowViewDialog(false)}
-                className="border-[#FFD300]/50 hover:border-[#FFD300] hover:bg-[#FFFDF0] transition-all duration-200 rounded-xl"
+                className="w-full sm:w-auto border-[#FFD300]/50 hover:border-[#FFD300] hover:bg-[#FFFDF0] transition-all duration-200 rounded-xl"
               >
                 Fechar
               </Button>

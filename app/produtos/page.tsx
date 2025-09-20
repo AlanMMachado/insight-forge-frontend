@@ -238,16 +238,16 @@ export default function ProdutosPage() {
 
   return (
     <AuthenticatedLayout>
-      <div className="p-6 space-y-6">
+      <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
       {/* Header */}
       <div className="bg-gradient-to-r from-white to-[#FFFDF0] p-6 rounded-2xl border border-[#FFD300]/20 shadow-sm">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
             <div className="p-3 bg-gradient-to-br from-[#FFD300] to-[#E6BD00] rounded-xl shadow-md">
               <Package className="h-8 w-8 text-[#0C0C0C]" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-[#0C0C0C] mb-1">Produtos</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold text-[#0C0C0C] mb-1">Produtos</h1>
               <p className="text-gray-600 flex items-center gap-2">
                 <span className="w-2 h-2 bg-[#FFD300] rounded-full"></span>
                 Gerencie seu catálogo de produtos
@@ -255,7 +255,7 @@ export default function ProdutosPage() {
             </div>
           </div>
           
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
             <Button 
               onClick={() => router.push('/importar-dados')} 
               variant="outline" 
@@ -291,7 +291,7 @@ export default function ProdutosPage() {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-end">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 items-end">
             {/* Campo de busca */}
             <div className="lg:col-span-5">
               <Label htmlFor="search" className="text-sm font-medium text-gray-700 mb-2 block">
@@ -311,7 +311,7 @@ export default function ProdutosPage() {
             </div>
             
             {/* Botões de ação */}
-            <div className="lg:col-span-7 flex flex-col sm:flex-row gap-3 items-stretch sm:items-end">
+            <div className="lg:col-span-7 flex flex-col sm:flex-row gap-2 sm:gap-3 items-stretch sm:items-end">
               <Button
                 onClick={() => {
                   setHasSearched(true)
@@ -357,7 +357,7 @@ export default function ProdutosPage() {
                 </CardDescription>
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Button
                 onClick={handleExportProdutos}
                 variant="outline"
@@ -539,14 +539,14 @@ export default function ProdutosPage() {
                       <Table>
                         <TableHeader>
                           <TableRow className="bg-gray-50/50 border-b-2 border-[#FFD300]/20">
-                            <TableHead className="min-w-[150px] font-semibold text-gray-700">Nome</TableHead>
-                            <TableHead className="hidden sm:table-cell font-semibold text-gray-700">Categoria</TableHead>
-                            <TableHead className="hidden md:table-cell font-semibold text-gray-700">Preço</TableHead>
-                            <TableHead className="hidden lg:table-cell font-semibold text-gray-700">Custo</TableHead>
-                            <TableHead className="hidden lg:table-cell font-semibold text-gray-700">Margem</TableHead>
-                            <TableHead className="text-center font-semibold text-gray-700">Estoque</TableHead>
-                            <TableHead className="text-center font-semibold text-gray-700">Status</TableHead>
-                            <TableHead className="text-center min-w-[120px] font-semibold text-gray-700">Ações</TableHead>
+                            <TableHead className="min-w-[120px] font-semibold text-gray-700">Nome</TableHead>
+                            <TableHead className="hidden md:table-cell font-semibold text-gray-700 min-w-[100px]">Categoria</TableHead>
+                            <TableHead className="hidden lg:table-cell font-semibold text-gray-700 min-w-[80px]">Preço</TableHead>
+                            <TableHead className="hidden xl:table-cell font-semibold text-gray-700 min-w-[80px]">Custo</TableHead>
+                            <TableHead className="hidden xl:table-cell font-semibold text-gray-700 min-w-[80px]">Margem</TableHead>
+                            <TableHead className="text-center font-semibold text-gray-700 min-w-[80px]">Estoque</TableHead>
+                            <TableHead className="text-center font-semibold text-gray-700 min-w-[80px]">Status</TableHead>
+                            <TableHead className="text-center min-w-[90px] font-semibold text-gray-700">Ações</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -575,35 +575,38 @@ export default function ProdutosPage() {
                                 <TableCell className="font-medium py-4">
                                   <div className="space-y-1">
                                     <div className="font-medium text-gray-900">{produto.nome}</div>
-                                    <div className="text-xs text-gray-500 sm:hidden bg-gray-100 px-2 py-1 rounded-md inline-block">
+                                    <div className="text-xs text-gray-500 md:hidden bg-gray-100 px-2 py-1 rounded-md inline-block">
                                       {produto.categoria || "Sem categoria"}
                                     </div>
-                                    <div className="text-xs text-gray-500 md:hidden">
+                                    <div className="text-xs text-gray-500 lg:hidden">
                                       {produto.preco ? `R$ ${produto.preco.toFixed(2)}` : "Sem preço"}
                                     </div>
-                                    <div className="text-xs text-gray-500 lg:hidden">
+                                    <div className="text-xs text-gray-500 xl:hidden">
                                       Custo: {produto.custo ? `R$ ${produto.custo.toFixed(2)}` : "Não informado"}
+                                    </div>
+                                    <div className="text-xs text-gray-500 xl:hidden">
+                                      Margem: {margem}
                                     </div>
                                   </div>
                                 </TableCell>
-                                <TableCell className="hidden sm:table-cell py-4">
+                                <TableCell className="hidden md:table-cell py-4">
                                   <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-md text-xs font-medium">
                                     {produto.categoria || "Sem categoria"}
                                   </span>
                                 </TableCell>
-                                <TableCell className="hidden md:table-cell py-4">
+                                <TableCell className="hidden lg:table-cell py-4">
                                   <span className="font-semibold text-gray-800">
                                     {produto.preco ? `R$ ${produto.preco.toFixed(2)}` : "-"}
                                   </span>
                                 </TableCell>
-                                <TableCell className="hidden lg:table-cell py-4">
+                                <TableCell className="hidden xl:table-cell py-4">
                                   {produto.custo ? (
                                     <span className="text-gray-700">R$ {produto.custo.toFixed(2)}</span>
                                   ) : (
                                     <span className="text-gray-400 text-sm">Não informado</span>
                                   )}
                                 </TableCell>
-                                <TableCell className="hidden lg:table-cell py-4">
+                                <TableCell className="hidden xl:table-cell py-4">
                                   <div className="flex items-center gap-2">
                                     <span className={`font-medium ${
                                       margemNumeric === null ? 'text-gray-400' :
@@ -713,8 +716,8 @@ export default function ProdutosPage() {
           }
         }
       }}>
-        <DialogContent className="max-w-2xl border-[#FFD300]/20">
-          <DialogHeader className="bg-gradient-to-r from-[#FFFDF0] to-white p-6 -m-6 mb-6 rounded-t-lg">
+        <DialogContent className="max-w-2xl w-[95vw] sm:w-full border-[#FFD300]/20 shadow-xl rounded-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="bg-gradient-to-r from-[#FFFDF0] to-white p-4 sm:p-6 -m-4 sm:-m-6 mb-4 sm:mb-6 rounded-t-2xl border-b border-[#FFD300]/20">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-[#FFD300]/20 rounded-lg">
                 <Plus className="h-5 w-5 text-[#0C0C0C]" />
@@ -881,7 +884,7 @@ export default function ProdutosPage() {
             </div>
           </div>
           
-          <DialogFooter className="bg-gray-50/50 p-6 -m-6 mt-6 rounded-b-lg">
+          <DialogFooter className="bg-gray-50/50 p-4 sm:p-6 -m-4 sm:-m-6 mt-4 sm:mt-6 rounded-b-2xl border-t border-[#FFD300]/20">
             <div className="flex flex-col sm:flex-row gap-3 w-full">
               <Button 
                 variant="outline" 
@@ -905,8 +908,8 @@ export default function ProdutosPage() {
 
       {/* Dialog para Editar Produto */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="max-w-2xl border-[#FFD300]/20">
-          <DialogHeader className="bg-gradient-to-r from-[#FFFDF0] to-white p-6 -m-6 mb-6 rounded-t-lg">
+        <DialogContent className="max-w-2xl w-[95vw] sm:w-full border-[#FFD300]/20 shadow-xl rounded-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="bg-gradient-to-r from-[#FFFDF0] to-white p-4 sm:p-6 -m-4 sm:-m-6 mb-4 sm:mb-6 rounded-t-2xl border-b border-[#FFD300]/20">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-[#FFD300]/20 rounded-lg">
                 <Edit className="h-5 w-5 text-[#0C0C0C]" />
@@ -1067,7 +1070,7 @@ export default function ProdutosPage() {
             </div>
           </div>
 
-          <DialogFooter className="bg-gray-50/50 p-6 -m-6 mt-6 rounded-b-lg">
+          <DialogFooter className="bg-gray-50/50 p-4 sm:p-6 -m-4 sm:-m-6 mt-4 sm:mt-6 rounded-b-2xl border-t border-[#FFD300]/20">
             <div className="flex flex-col sm:flex-row gap-3 w-full">
               <Button 
                 variant="outline" 
@@ -1091,8 +1094,8 @@ export default function ProdutosPage() {
 
       {/* Dialog para Visualizar Produto */}
       <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
-        <DialogContent className="max-w-2xl border-[#FFD300]/20">
-          <DialogHeader className="bg-gradient-to-r from-[#FFFDF0] to-white p-6 -m-6 mb-6 rounded-t-lg">
+        <DialogContent className="max-w-2xl w-[95vw] sm:w-full border-[#FFD300]/20 shadow-xl rounded-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="bg-gradient-to-r from-[#FFFDF0] to-white p-4 sm:p-6 -m-4 sm:-m-6 mb-4 sm:mb-6 rounded-t-2xl border-b border-[#FFD300]/20">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-[#FFD300]/20 rounded-lg">
                 <Eye className="h-5 w-5 text-[#0C0C0C]" />
@@ -1240,7 +1243,7 @@ export default function ProdutosPage() {
             </div>
           )}
           
-          <DialogFooter className="bg-gray-50/50 p-6 -m-6 mt-6 rounded-b-lg">
+          <DialogFooter className="bg-gray-50/50 p-4 sm:p-6 -m-4 sm:-m-6 mt-4 sm:mt-6 rounded-b-2xl border-t border-[#FFD300]/20">
             <Button 
               variant="outline" 
               onClick={() => setShowViewDialog(false)}
@@ -1255,8 +1258,8 @@ export default function ProdutosPage() {
 
       {/* Dialog para Criar Nova Categoria */}
       <Dialog open={showNewCategoryDialog} onOpenChange={setShowNewCategoryDialog}>
-        <DialogContent className="max-w-md border-[#FFD300]/20">
-          <DialogHeader className="bg-gradient-to-r from-[#FFFDF0] to-white p-6 -m-6 mb-6 rounded-t-lg">
+        <DialogContent className="max-w-md w-[95vw] sm:w-full border-[#FFD300]/20 shadow-xl rounded-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="bg-gradient-to-r from-[#FFFDF0] to-white p-4 sm:p-6 -m-4 sm:-m-6 mb-4 sm:mb-6 rounded-t-2xl border-b border-[#FFD300]/20">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-[#FFD300]/20 rounded-lg">
                 <Plus className="h-5 w-5 text-[#0C0C0C]" />
@@ -1288,7 +1291,7 @@ export default function ProdutosPage() {
             </div>
           </div>
 
-          <DialogFooter className="bg-gray-50/50 p-6 -m-6 mt-6 rounded-b-lg">
+          <DialogFooter className="bg-gray-50/50 p-4 sm:p-6 -m-4 sm:-m-6 mt-4 sm:mt-6 rounded-b-2xl border-t border-[#FFD300]/20">
             <div className="flex flex-col sm:flex-row gap-3 w-full">
               <Button 
                 variant="outline" 

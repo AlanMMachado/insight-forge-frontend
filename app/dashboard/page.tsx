@@ -21,7 +21,7 @@ export default function DashboardPage() {
 
   return (
     <AuthenticatedLayout>
-      <div className="p-4 sm:p-6 space-y-6 sm:space-y-8">
+      <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
         <DashboardHeader />
         <MetricsGrid isLoading={isLoading} />
         <ChartsGrid isLoading={isLoading} />
