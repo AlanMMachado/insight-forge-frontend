@@ -12,12 +12,13 @@ import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Package, Plus, Search, Edit, Trash2, Eye, Download, Filter, Upload, Table2 } from "lucide-react"
+import { Package, Plus, Search, Edit, Trash2, Eye, Download, Filter, Upload, Table2, ImageIcon } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { ApiService, Produto } from "@/lib/api"
+import { ApiService, Produto, getFullImageUrl } from "@/lib/api"
 import { CATEGORIAS_PRODUTOS } from "@/lib/categorias"
 import AuthenticatedLayout from "@/components/authenticated-layout"
 import MobileDataCard, { createDefaultActions, CardField } from "@/components/mobile-data-card"
+import { ImageUploadZone } from "@/components/image-upload-zone"
 import { useIsMobile } from "@/hooks/use-mobile"
 
 export default function ProdutosPage() {
@@ -40,10 +41,37 @@ export default function ProdutosPage() {
     custo: null,
     quantidadeEstoque: 0,
     ativo: true,
-    descricao: ""
+    descricao: "",
+    fotoUrl: ""
   })
+  const [selectedImage, setSelectedImage] = useState<File | null>(null)
+  const [removerFoto, setRemoverFoto] = useState(false)
   const [categorias, setCategorias] = useState<string[]>([]);
   const [novaCategoria, setNovaCategoria] = useState("");
+  const [hoveredProductId, setHoveredProductId] = useState<number | null>(null)
+  const [tooltipPosition, setTooltipPosition] = useState<{x: number, y: number} | null>(null)
+
+  const handleImageHover = (produtoId: number, event: React.MouseEvent) => {
+    setHoveredProductId(produtoId)
+    
+    const rect = event.currentTarget.getBoundingClientRect()
+    const tooltipWidth = 160 // largura estimada do tooltip
+    const tooltipHeight = 180 // altura estimada do pop-up da imagem
+    
+    let x = rect.left + rect.width / 2 - tooltipWidth / 2
+    let y = rect.top - tooltipHeight - 10
+    
+    // Ajustar horizontalmente se sair da tela
+    if (x < 10) x = 10
+    if (x + tooltipWidth > window.innerWidth - 10) x = window.innerWidth - tooltipWidth - 10
+    
+    // Se não couber acima, colocar abaixo
+    if (y < 10) {
+      y = rect.bottom + 10
+    }
+    
+    setTooltipPosition({ x, y })
+  }
   const [showNewCategoryDialog, setShowNewCategoryDialog] = useState(false);
   const { toast } = useToast()
 
@@ -120,7 +148,7 @@ export default function ProdutosPage() {
     }
 
     try {
-      await ApiService.criarProduto(formData)
+      const produtoCriado = await ApiService.criarProdutoComImagem(formData, selectedImage || undefined)
       toast({
         title: "Produto criado",
         description: "Produto criado com sucesso!"
@@ -168,7 +196,10 @@ export default function ProdutosPage() {
     }
 
     try {
-      await ApiService.atualizarProduto(selectedProduto.id, formData)
+      // Se temos uma nova imagem selecionada, não devemos remover a foto
+      const shouldRemovePhoto = removerFoto && !selectedImage;
+      
+      await ApiService.atualizarProdutoComImagem(selectedProduto.id, formData, selectedImage || undefined, shouldRemovePhoto)
       toast({
         title: "Produto atualizado",
         description: "Produto atualizado com sucesso!"
@@ -237,9 +268,12 @@ export default function ProdutosPage() {
       custo: null,
       quantidadeEstoque: 0,
       ativo: true,
-      descricao: ""
+      descricao: "",
+      fotoUrl: ""
     })
     setSelectedProduto(null)
+    setSelectedImage(null)
+    setRemoverFoto(false)
   }
 
   const renderProdutoCard = (produto: Produto, index: number) => {
@@ -333,8 +367,11 @@ export default function ProdutosPage() {
       custo: produto.custo || null,
       quantidadeEstoque: produto.quantidadeEstoque || 0,
       ativo: produto.ativo ?? true,
-      descricao: produto.descricao || ""
+      descricao: produto.descricao || "",
+      fotoUrl: produto.fotoUrl || ""
     })
+    setSelectedImage(null)
+    setRemoverFoto(false)
     setShowEditDialog(true)
   }
 
@@ -710,7 +747,23 @@ export default function ProdutosPage() {
                                 >
                                   <TableCell className="font-medium py-4">
                                     <div className="space-y-1">
-                                      <div className="font-medium text-gray-900">{produto.nome}</div>
+                                      <div className="flex items-center gap-2">
+                                        <div className="font-medium text-gray-900">{produto.nome}</div>
+                                        {produto.fotoUrl && (
+                                          <div className="relative">
+                                            <div
+                                              className="inline-flex items-center justify-center w-5 h-5 bg-[#FFD300]/10 rounded-full cursor-pointer hover:bg-[#FFD300]/20 transition-colors"
+                                              onMouseEnter={(e) => produto.id && handleImageHover(produto.id, e)}
+                                              onMouseLeave={() => {
+                                                setHoveredProductId(null)
+                                                setTooltipPosition(null)
+                                              }}
+                                            >
+                                              <ImageIcon className="w-3 h-3 text-[#FFD300]" />
+                                            </div>
+                                          </div>
+                                        )}
+                                      </div>
                                       <div className="text-xs text-gray-500 md:hidden bg-gray-100 px-2 py-1 rounded-md inline-block">
                                         {produto.categoria || "Sem categoria"}
                                       </div>
@@ -841,6 +894,35 @@ export default function ProdutosPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Tooltip global para preview de imagens */}
+      {hoveredProductId && tooltipPosition && (
+        <div 
+          className="fixed z-50 bg-white border border-gray-200 rounded-lg shadow-lg p-0 overflow-hidden pointer-events-none"
+          style={{
+            left: `${tooltipPosition.x}px`,
+            top: `${tooltipPosition.y}px`,
+          }}
+        >
+          <div className="w-40 h-40">
+            <img
+              src={getFullImageUrl(filteredProdutos.find(p => p.id === hoveredProductId)?.fotoUrl || '')}
+              alt={filteredProdutos.find(p => p.id === hoveredProductId)?.nome || ''}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+                e.currentTarget.parentElement!.innerHTML = '<div class="w-full h-full flex items-center justify-center bg-gray-100"><svg class="w-8 h-8 text-gray-400" viewBox="0 0 24 24" fill="currentColor"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg></div>';
+              }}
+            />
+          </div>
+          {/* Nome do produto */}
+          <div className="p-2 bg-gray-50 border-t border-gray-200">
+            <p className="text-xs font-medium text-gray-700 text-center truncate">
+              {filteredProdutos.find(p => p.id === hoveredProductId)?.nome}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Dialog para Criar Produto */}
       <Dialog open={showCreateDialog} onOpenChange={(open) => {
@@ -1014,10 +1096,31 @@ export default function ProdutosPage() {
                   id="descricao"
                   value={formData.descricao}
                   onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
-                  placeholder="Descreva as características e benefícios do produto"
+                  placeholder="Digite uma descrição detalhada do produto..."
                   rows={3}
                   className="border-gray-200 focus:border-[#FFD300] focus:ring-[#FFD300]/20 rounded-xl resize-none"
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  Campo opcional. Descrição detalhada do produto.
+                </p>
+              </div>
+
+              <div className="md:col-span-2">
+                <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                  Imagem do Produto
+                </Label>
+                <ImageUploadZone
+                  onImageSelect={(file) => {
+                    setSelectedImage(file)
+                    setRemoverFoto(false) // Consistência com formulário de edição
+                  }}
+                  selectedImage={selectedImage}
+                  onRemoveImage={() => setSelectedImage(null)}
+                  maxSize={5}
+                />
+                <p className="text-xs text-gray-500 mt-2">
+                  Formatos aceitos: JPEG, PNG. Tamanho máximo: 5MB.
+                </p>
               </div>
             </div>
           </div>
@@ -1200,10 +1303,36 @@ export default function ProdutosPage() {
                   id="edit-descricao"
                   value={formData.descricao}
                   onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
-                  placeholder="Descreva as características e benefícios do produto"
+                  placeholder="Digite uma descrição detalhada do produto..."
                   rows={3}
                   className="border-gray-200 focus:border-[#FFD300] focus:ring-[#FFD300]/20 rounded-xl resize-none"
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  Campo opcional. Descrição detalhada do produto.
+                </p>
+              </div>
+
+              <div className="md:col-span-2">
+                <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                  Imagem do Produto
+                </Label>
+                <ImageUploadZone
+                  onImageSelect={(file) => {
+                    setSelectedImage(file)
+                    setRemoverFoto(false) // Limpar flag quando nova imagem é selecionada
+                  }}
+                  selectedImage={selectedImage}
+                  currentImageUrl={getFullImageUrl(formData.fotoUrl)}
+                  onRemoveImage={() => {
+                    setSelectedImage(null)
+                    setRemoverFoto(true)
+                    setFormData(prev => ({ ...prev, fotoUrl: "" }))
+                  }}
+                  maxSize={5}
+                />
+                <p className="text-xs text-gray-500 mt-2">
+                  Formatos aceitos: JPEG, PNG. Tamanho máximo: 5MB.
+                </p>
               </div>
             </div>
           </div>
@@ -1249,6 +1378,30 @@ export default function ProdutosPage() {
           
           {selectedProduto && (
             <div className="space-y-6">
+              {/* Imagem do Produto */}
+              {selectedProduto.fotoUrl && (
+                <div className="bg-white p-4 rounded-xl border border-gray-200">
+                  <Label className="text-sm font-semibold text-gray-700 mb-3 block">
+                    Imagem do Produto
+                  </Label>
+                  <div className="flex justify-center">
+                    <img
+                      src={getFullImageUrl(selectedProduto.fotoUrl)}
+                      alt={selectedProduto.nome}
+                      className="max-w-full max-h-64 object-contain rounded-lg shadow-sm"
+                      onError={(e) => {
+                        console.error('Erro ao carregar imagem no modal:', {
+                          original: selectedProduto.fotoUrl,
+                          full: getFullImageUrl(selectedProduto.fotoUrl),
+                          produto: selectedProduto.nome
+                        });
+                      }}
+                      loading="lazy"
+                    />
+                  </div>
+                </div>
+              )}
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="bg-gray-50/50 p-4 rounded-xl">
                   <Label className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
@@ -1321,43 +1474,20 @@ export default function ProdutosPage() {
                     <p className="text-xl font-bold text-[#0C0C0C]">{selectedProduto.quantidadeEstoque || 0}</p>
                     <div
                       className={`w-3 h-3 rounded-full ${
-                        (selectedProduto.quantidadeEstoque || 0) < 20 
-                          ? "bg-red-500" 
-                          : (selectedProduto.quantidadeEstoque || 0) > 50 
-                          ? "bg-green-500" 
+                        (selectedProduto.quantidadeEstoque || 0) < 20
+                          ? "bg-red-500"
+                          : (selectedProduto.quantidadeEstoque || 0) > 50
+                          ? "bg-green-500"
                           : "bg-yellow-500"
                       }`}
                     />
                     <span className="text-xs text-gray-600">
-                      {(selectedProduto.quantidadeEstoque || 0) < 20 ? "Estoque baixo" : 
+                      {(selectedProduto.quantidadeEstoque || 0) < 20 ? "Estoque baixo" :
                        (selectedProduto.quantidadeEstoque || 0) > 50 ? "Estoque adequado" : "Estoque médio"}
                     </span>
                   </div>
                 </div>
-                
-                <div className="bg-gray-50/50 p-4 rounded-xl">
-                  <Label className="text-sm font-semibold text-gray-700 mb-2 block">
-                    Status do Produto
-                  </Label>
-                  <div className="mt-2">
-                    <Badge 
-                      variant={selectedProduto.ativo ? "default" : "secondary"}
-                      className={`${
-                        selectedProduto.ativo 
-                          ? 'bg-green-100 text-green-800 hover:bg-green-200' 
-                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className={`w-2 h-2 rounded-full ${
-                          selectedProduto.ativo ? 'bg-green-500' : 'bg-gray-400'
-                        }`}></div>
-                        {selectedProduto.ativo ? "Ativo" : "Inativo"}
-                      </div>
-                    </Badge>
-                  </div>
-                </div>
-                
+
                 {selectedProduto.dataCriacao && (
                   <div className="bg-gray-50/50 p-4 rounded-xl">
                     <Label className="text-sm font-semibold text-gray-700 mb-2 block">
@@ -1369,7 +1499,7 @@ export default function ProdutosPage() {
                   </div>
                 )}
               </div>
-              
+
               {selectedProduto.descricao && (
                 <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-200/50">
                   <Label className="text-sm font-semibold text-gray-700 mb-2 block">
@@ -1378,6 +1508,27 @@ export default function ProdutosPage() {
                   <p className="text-gray-900 leading-relaxed">{selectedProduto.descricao}</p>
                 </div>
               )}
+
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <div className="flex items-center justify-center gap-2">
+                  <span className="text-xs text-gray-500">Status:</span>
+                  <Badge
+                    variant={selectedProduto.ativo ? "default" : "secondary"}
+                    className={`text-xs ${
+                      selectedProduto.ativo
+                        ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    <div className="flex items-center gap-1">
+                      <div className={`w-1.5 h-1.5 rounded-full ${
+                        selectedProduto.ativo ? 'bg-green-500' : 'bg-gray-400'
+                      }`}></div>
+                      {selectedProduto.ativo ? "Ativo" : "Inativo"}
+                    </div>
+                  </Badge>
+                </div>
+              </div>
             </div>
           )}
           

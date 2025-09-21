@@ -17,6 +17,17 @@ export const setLoadingFunctions = (
 
 // Configuração da API
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080'
+console.log('API_BASE_URL configurada como:', API_BASE_URL)
+
+// Função para converter URLs relativas em absolutas
+export const getFullImageUrl = (imageUrl?: string): string | undefined => {
+  console.log('getFullImageUrl chamada com:', imageUrl)
+  if (!imageUrl) return undefined
+  if (imageUrl.startsWith('http')) return imageUrl
+  const fullUrl = `${API_BASE_URL}${imageUrl}`
+  console.log('URL convertida:', fullUrl)
+  return fullUrl
+}
 
 // Endpoints de autenticação
 export const AUTH_ENDPOINTS = {
@@ -85,6 +96,7 @@ export interface Produto {
   quantidadeEstoque?: number
   ativo?: boolean
   descricao?: string
+  fotoUrl?: string
   dataCriacao?: string
   dataAtualizacao?: string
 }
@@ -194,6 +206,59 @@ export class ApiService {
     return this.request<void>(`${PRODUTOS_ENDPOINTS.deletar}/${id}`, {
       method: 'DELETE',
     });
+  }
+  static async criarProdutoComImagem(produto: Produto, imagem?: File): Promise<Produto> {
+    const formData = new FormData();
+    formData.append('produto', new Blob([JSON.stringify(produto)], { type: 'application/json' }));
+    
+    if (imagem) {
+      formData.append('file', imagem);
+    }
+
+    const token = getToken();
+    const response = await fetch(`${API_BASE_URL}${PRODUTOS_ENDPOINTS.criar}`, {
+      method: 'POST',
+      headers: {
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+      body: formData,
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || `HTTP error! status: ${response.status}`);
+    }
+    
+    return await response.json();
+  }
+  static async atualizarProdutoComImagem(id: number, produto: Produto, imagem?: File, removerFoto: boolean = false): Promise<Produto> {
+    const formData = new FormData();
+    formData.append('produto', new Blob([JSON.stringify(produto)], { type: 'application/json' }));
+    
+    if (imagem) {
+      formData.append('file', imagem);
+    }
+    
+    const token = getToken();
+    const url = new URL(`${API_BASE_URL}${PRODUTOS_ENDPOINTS.atualizar}/${id}`);
+    if (removerFoto) {
+      url.searchParams.append('removerFoto', 'true');
+    }
+    
+    const response = await fetch(url.toString(), {
+      method: 'PUT',
+      headers: {
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+      body: formData,
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || `HTTP error! status: ${response.status}`);
+    }
+    
+    return await response.json();
   }
   static async importarProdutos(file: File): Promise<import('@/types/import').ImportProdutosResponse> {
     const formData = new FormData();
