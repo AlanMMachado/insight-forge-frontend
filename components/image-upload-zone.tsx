@@ -4,7 +4,7 @@ import React, { useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Upload, Image as ImageIcon, X, Eye } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogTrigger, DialogTitle } from "@/components/ui/dialog"
 
 interface ImageUploadZoneProps {
   onImageSelect: (file: File) => void
@@ -215,6 +215,7 @@ export function ImageUploadZone({
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-2xl">
+                  <DialogTitle className="sr-only">Image Preview</DialogTitle>
                   <img
                     src={imageUrl}
                     alt="Preview ampliada"

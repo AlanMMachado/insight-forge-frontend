@@ -63,7 +63,6 @@ const MetricCard = memo(function MetricCard({ metric, isLoading = false, isHighl
                   <span className={`text-sm sm:text-base font-bold ${metric.trend === "up" ? "text-green-600" : "text-red-600"} truncate`}>
                     {metric.change}
                   </span>
-                  <span className="text-xs sm:text-sm text-gray-600 hidden lg:inline truncate font-medium">vs mês anterior</span>
                 </div>
               )}
             </div>
@@ -110,7 +109,6 @@ const MetricCard = memo(function MetricCard({ metric, isLoading = false, isHighl
               <span className={`text-xs sm:text-sm font-medium ${metric.trend === "up" ? "text-green-500" : "text-red-500"} truncate`}>
                 {metric.change}
               </span>
-              <span className="text-[10px] sm:text-xs text-gray-500 hidden lg:inline truncate">vs mês anterior</span>
             </div>
           )}
           <p className="text-[10px] sm:text-xs text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity duration-200 line-clamp-2">
@@ -222,7 +220,7 @@ export function MetricsGrid({ isLoading = false }: MetricsGridProps) {
         const entradasMes = movimentacoesMes
           .filter(mov => mov.tipoMovimentacao.toLowerCase().includes('compra'))
           .reduce((sum, mov) => sum + mov.quantidadeMovimentada, 0)
-        
+
         // Receita e lucro total (baseada em todas as vendas cadastradas)
         const vendasTotais = movimentacoes.filter(mov => mov.tipoMovimentacao.toLowerCase().includes('venda'))
         
@@ -251,36 +249,23 @@ export function MetricsGrid({ isLoading = false }: MetricsGridProps) {
             periodoInfo = `${formatarData(dataInicial)} - ${formatarData(dataFinal)}`
           }
         }
-        
-        // Helper function para determinar trend baseado no change
-        const getTrendFromChange = (change: string): "up" | "down" => {
-          if (change.includes("+") || change === "OK") return "up"
-          if (change.includes("-") || change === "Atenção") return "down"
-          return "up" // default para 0% ou outros casos
-        }
 
         setMetrics([
           {
             title: "Valor Total do Estoque",
             value: `R$ ${valorTotalEstoque.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
-            change: valorTotalEstoque > 50000 ? "+12%" : valorTotalEstoque > 20000 ? "+5%" : valorTotalEstoque > 0 ? "+2%" : "0%",
-            trend: valorTotalEstoque > 0 ? "up" : "down",
             icon: Wallet,
             description: "Valor total dos produtos em estoque",
           },
           {
             title: "Margem de Lucro Potencial",
             value: `R$ ${margemLucroPotencial.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
-            change: margemLucroPotencial > 20000 ? "+15%" : margemLucroPotencial > 5000 ? "+8%" : margemLucroPotencial > 0 ? "+3%" : "0%",
-            trend: margemLucroPotencial > 0 ? "up" : "down",
             icon: Target,
             description: "Lucro potencial com estoque atual",
           },
           {
             title: "Produtos Ativos",
             value: produtosAtivos.toString(),
-            change: produtosAtivos > 15 ? "+8%" : produtosAtivos > 5 ? "+3%" : produtosAtivos > 0 ? "+1%" : "0%",
-            trend: produtosAtivos > 0 ? "up" : "down",
             icon: Package,
             description: "Produtos disponíveis para venda",
           },
@@ -295,32 +280,24 @@ export function MetricsGrid({ isLoading = false }: MetricsGridProps) {
           {
             title: "Movimentações (Mês)",
             value: totalMovimentacoesMes.toString(),
-            change: totalMovimentacoesMes > 20 ? "+15%" : totalMovimentacoesMes > 10 ? "+8%" : totalMovimentacoesMes > 0 ? "+3%" : "0%",
-            trend: totalMovimentacoesMes > 0 ? "up" : "down",
             icon: ShoppingCart,
             description: "Total de movimentações do mês",
           },
           {
             title: "Receita Total",
             value: `R$ ${receitaTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
-            change: receitaTotal > 50000 ? "+25%" : receitaTotal > 20000 ? "+15%" : receitaTotal > 5000 ? "+8%" : receitaTotal > 0 ? "+5%" : "0%",
-            trend: receitaTotal > 0 ? "up" : "down",
             icon: DollarSign,
             description: `Receita total das vendas (${periodoInfo})`,
           },
           {
             title: "Lucro Total",
             value: `R$ ${lucroTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
-            change: lucroTotal > 20000 ? "+30%" : lucroTotal > 10000 ? "+20%" : lucroTotal > 2000 ? "+12%" : lucroTotal > 0 ? "+10%" : "0%",
-            trend: lucroTotal > 0 ? "up" : "down",
             icon: TrendingUp,
             description: `Lucro total das vendas (${periodoInfo})`,
           },
           {
             title: "Entradas do Mês",
             value: entradasMes.toString(),
-            change: entradasMes > 100 ? "+25%" : entradasMes > 50 ? "+15%" : entradasMes > 10 ? "+8%" : entradasMes > 0 ? "+5%" : "0%",
-            trend: entradasMes > 0 ? "up" : "down",
             icon: TrendingDown,
             description: "Quantidade comprada este mês",
           },
