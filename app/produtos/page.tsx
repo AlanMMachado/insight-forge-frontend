@@ -18,9 +18,12 @@ import { useToast } from "@/hooks/use-toast"
 import { ApiService, Produto } from "@/lib/api"
 import { CATEGORIAS_PRODUTOS } from "@/lib/categorias"
 import AuthenticatedLayout from "@/components/authenticated-layout"
+import MobileDataCard, { createDefaultActions, CardField } from "@/components/mobile-data-card"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 export default function ProdutosPage() {
   const router = useRouter()
+  const isMobile = useIsMobile()
   const [produtos, setProdutos] = useState<Produto[]>([])
   const [loading, setLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
@@ -188,6 +191,91 @@ export default function ProdutosPage() {
     })
     setSelectedProduto(null)
   }
+
+  // Função para renderizar produto como card mobile
+  const renderProdutoCard = (produto: Produto, index: number) => {
+    // Calcular margem de lucro se custo e preço estiverem definidos
+    const calcularMargem = () => {
+      if (produto.preco && produto.custo && produto.custo > 0) {
+        const margem = ((produto.preco - produto.custo) / produto.preco) * 100;
+        return margem.toFixed(1) + '%';
+      }
+      return '-';
+    };
+
+    const margem = calcularMargem();
+    const margemNumeric = produto.preco && produto.custo && produto.custo > 0 
+      ? ((produto.preco - produto.custo) / produto.preco) * 100 
+      : null;
+
+    const getStatusColor = (ativo: boolean) => {
+      return ativo ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600";
+    };
+
+    const getEstoqueColor = (quantidade: number) => {
+      if (quantidade < 20) return "text-red-600";
+      if (quantidade > 50) return "text-green-600";
+      return "text-yellow-600";
+    };
+
+    const getMargemColor = (margem: number | null) => {
+      if (margem === null) return "text-gray-400";
+      if (margem >= 30) return "text-green-600";
+      if (margem >= 15) return "text-yellow-600";
+      return "text-red-600";
+    };
+
+    const fields: CardField[] = [
+      {
+        label: "Categoria",
+        value: produto.categoria || "Sem categoria",
+        className: "font-medium"
+      },
+      {
+        label: "Preço",
+        value: produto.preco ? `R$ ${produto.preco.toFixed(2)}` : "Não informado",
+        className: "font-semibold text-gray-800"
+      },
+      {
+        label: "Custo",
+        value: produto.custo ? `R$ ${produto.custo.toFixed(2)}` : "Não informado",
+        className: "text-gray-700"
+      },
+      {
+        label: "Margem",
+        value: margem,
+        className: `font-medium ${getMargemColor(margemNumeric)}`
+      },
+      {
+        label: "Estoque",
+        value: `${produto.quantidadeEstoque || 0} unid.`,
+        className: `font-semibold ${getEstoqueColor(produto.quantidadeEstoque || 0)}`
+      },
+      {
+        label: "Status",
+        value: produto.ativo ? "Ativo" : "Inativo",
+        isStatus: true,
+        statusVariant: produto.ativo ? "default" : "secondary"
+      }
+    ];
+
+    const actions = [
+      createDefaultActions.view(() => openViewDialog(produto)),
+      createDefaultActions.edit(() => openEditDialog(produto)),
+      createDefaultActions.delete(() => produto.id && handleDeleteProduto(produto.id))
+    ];
+
+    return (
+      <MobileDataCard
+        key={produto.id}
+        title={produto.nome}
+        subtitle={produto.descricao}
+        fields={fields}
+        actions={actions}
+        className="mb-4"
+      />
+    );
+  };
 
   const openEditDialog = (produto: Produto) => {
     setSelectedProduto(produto)
@@ -535,168 +623,176 @@ export default function ProdutosPage() {
                     </div>
                   </CardHeader>
                   <CardContent className="p-0">
-                    <div className="overflow-x-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow className="bg-gray-50/50 border-b-2 border-[#FFD300]/20">
-                            <TableHead className="min-w-[120px] font-semibold text-gray-700">Nome</TableHead>
-                            <TableHead className="hidden md:table-cell font-semibold text-gray-700 min-w-[100px]">Categoria</TableHead>
-                            <TableHead className="hidden lg:table-cell font-semibold text-gray-700 min-w-[80px]">Preço</TableHead>
-                            <TableHead className="hidden xl:table-cell font-semibold text-gray-700 min-w-[80px]">Custo</TableHead>
-                            <TableHead className="hidden xl:table-cell font-semibold text-gray-700 min-w-[80px]">Margem</TableHead>
-                            <TableHead className="text-center font-semibold text-gray-700 min-w-[80px]">Estoque</TableHead>
-                            <TableHead className="text-center font-semibold text-gray-700 min-w-[80px]">Status</TableHead>
-                            <TableHead className="text-center min-w-[90px] font-semibold text-gray-700">Ações</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {filteredProdutos.map((produto, index) => {
-                            // Calcular margem de lucro se custo e preço estiverem definidos
-                            const calcularMargem = () => {
-                              if (produto.preco && produto.custo && produto.custo > 0) {
-                                const margem = ((produto.preco - produto.custo) / produto.preco) * 100;
-                                return margem.toFixed(1) + '%';
-                              }
-                              return '-';
-                            };
+                    {isMobile ? (
+                      // Renderização mobile com cards
+                      <div className="p-4 space-y-4">
+                        {filteredProdutos.map((produto, index) => renderProdutoCard(produto, index))}
+                      </div>
+                    ) : (
+                      // Renderização desktop com tabela
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow className="bg-gray-50/50 border-b-2 border-[#FFD300]/20">
+                              <TableHead className="min-w-[120px] font-semibold text-gray-700">Nome</TableHead>
+                              <TableHead className="hidden md:table-cell font-semibold text-gray-700 min-w-[100px]">Categoria</TableHead>
+                              <TableHead className="hidden lg:table-cell font-semibold text-gray-700 min-w-[80px]">Preço</TableHead>
+                              <TableHead className="hidden xl:table-cell font-semibold text-gray-700 min-w-[80px]">Custo</TableHead>
+                              <TableHead className="hidden xl:table-cell font-semibold text-gray-700 min-w-[80px]">Margem</TableHead>
+                              <TableHead className="text-center font-semibold text-gray-700 min-w-[80px]">Estoque</TableHead>
+                              <TableHead className="text-center font-semibold text-gray-700 min-w-[80px]">Status</TableHead>
+                              <TableHead className="text-center min-w-[90px] font-semibold text-gray-700">Ações</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {filteredProdutos.map((produto, index) => {
+                              // Calcular margem de lucro se custo e preço estiverem definidos
+                              const calcularMargem = () => {
+                                if (produto.preco && produto.custo && produto.custo > 0) {
+                                  const margem = ((produto.preco - produto.custo) / produto.preco) * 100;
+                                  return margem.toFixed(1) + '%';
+                                }
+                                return '-';
+                              };
 
-                            const margem = calcularMargem();
-                            const margemNumeric = produto.preco && produto.custo && produto.custo > 0 
-                              ? ((produto.preco - produto.custo) / produto.preco) * 100 
-                              : null;
+                              const margem = calcularMargem();
+                              const margemNumeric = produto.preco && produto.custo && produto.custo > 0 
+                                ? ((produto.preco - produto.custo) / produto.preco) * 100 
+                                : null;
 
-                            return (
-                              <TableRow 
-                                key={produto.id}
-                                className={`hover:bg-[#FFFDF0] transition-colors ${
-                                  index % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'
-                                }`}
-                              >
-                                <TableCell className="font-medium py-4">
-                                  <div className="space-y-1">
-                                    <div className="font-medium text-gray-900">{produto.nome}</div>
-                                    <div className="text-xs text-gray-500 md:hidden bg-gray-100 px-2 py-1 rounded-md inline-block">
+                              return (
+                                <TableRow 
+                                  key={produto.id}
+                                  className={`hover:bg-[#FFFDF0] transition-colors ${
+                                    index % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'
+                                  }`}
+                                >
+                                  <TableCell className="font-medium py-4">
+                                    <div className="space-y-1">
+                                      <div className="font-medium text-gray-900">{produto.nome}</div>
+                                      <div className="text-xs text-gray-500 md:hidden bg-gray-100 px-2 py-1 rounded-md inline-block">
+                                        {produto.categoria || "Sem categoria"}
+                                      </div>
+                                      <div className="text-xs text-gray-500 lg:hidden">
+                                        {produto.preco ? `R$ ${produto.preco.toFixed(2)}` : "Sem preço"}
+                                      </div>
+                                      <div className="text-xs text-gray-500 xl:hidden">
+                                        Custo: {produto.custo ? `R$ ${produto.custo.toFixed(2)}` : "Não informado"}
+                                      </div>
+                                      <div className="text-xs text-gray-500 xl:hidden">
+                                        Margem: {margem}
+                                      </div>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell className="hidden md:table-cell py-4">
+                                    <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-md text-xs font-medium">
                                       {produto.categoria || "Sem categoria"}
-                                    </div>
-                                    <div className="text-xs text-gray-500 lg:hidden">
-                                      {produto.preco ? `R$ ${produto.preco.toFixed(2)}` : "Sem preço"}
-                                    </div>
-                                    <div className="text-xs text-gray-500 xl:hidden">
-                                      Custo: {produto.custo ? `R$ ${produto.custo.toFixed(2)}` : "Não informado"}
-                                    </div>
-                                    <div className="text-xs text-gray-500 xl:hidden">
-                                      Margem: {margem}
-                                    </div>
-                                  </div>
-                                </TableCell>
-                                <TableCell className="hidden md:table-cell py-4">
-                                  <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-md text-xs font-medium">
-                                    {produto.categoria || "Sem categoria"}
-                                  </span>
-                                </TableCell>
-                                <TableCell className="hidden lg:table-cell py-4">
-                                  <span className="font-semibold text-gray-800">
-                                    {produto.preco ? `R$ ${produto.preco.toFixed(2)}` : "-"}
-                                  </span>
-                                </TableCell>
-                                <TableCell className="hidden xl:table-cell py-4">
-                                  {produto.custo ? (
-                                    <span className="text-gray-700">R$ {produto.custo.toFixed(2)}</span>
-                                  ) : (
-                                    <span className="text-gray-400 text-sm">Não informado</span>
-                                  )}
-                                </TableCell>
-                                <TableCell className="hidden xl:table-cell py-4">
-                                  <div className="flex items-center gap-2">
-                                    <span className={`font-medium ${
-                                      margemNumeric === null ? 'text-gray-400' :
-                                      margemNumeric >= 30 ? 'text-green-600' :
-                                      margemNumeric >= 15 ? 'text-yellow-600' :
-                                      'text-red-600'
-                                    }`}>
-                                      {margem}
                                     </span>
-                                    {margemNumeric !== null && (
+                                  </TableCell>
+                                  <TableCell className="hidden lg:table-cell py-4">
+                                    <span className="font-semibold text-gray-800">
+                                      {produto.preco ? `R$ ${produto.preco.toFixed(2)}` : "-"}
+                                    </span>
+                                  </TableCell>
+                                  <TableCell className="hidden xl:table-cell py-4">
+                                    {produto.custo ? (
+                                      <span className="text-gray-700">R$ {produto.custo.toFixed(2)}</span>
+                                    ) : (
+                                      <span className="text-gray-400 text-sm">Não informado</span>
+                                    )}
+                                  </TableCell>
+                                  <TableCell className="hidden xl:table-cell py-4">
+                                    <div className="flex items-center gap-2">
+                                      <span className={`font-medium ${
+                                        margemNumeric === null ? 'text-gray-400' :
+                                        margemNumeric >= 30 ? 'text-green-600' :
+                                        margemNumeric >= 15 ? 'text-yellow-600' :
+                                        'text-red-600'
+                                      }`}>
+                                        {margem}
+                                      </span>
+                                      {margemNumeric !== null && (
+                                        <div
+                                          className={`w-2 h-2 rounded-full ${
+                                            margemNumeric >= 30 ? "bg-green-500" :
+                                            margemNumeric >= 15 ? "bg-yellow-500" :
+                                            "bg-red-500"
+                                          }`}
+                                        />
+                                      )}
+                                    </div>
+                                  </TableCell>
+                                  <TableCell className="text-center py-4">
+                                    <div className="flex items-center justify-center gap-2">
+                                      <span className="font-semibold text-gray-800 bg-[#FFD300]/20 px-3 py-1 rounded-lg">
+                                        {produto.quantidadeEstoque || 0}
+                                      </span>
                                       <div
                                         className={`w-2 h-2 rounded-full ${
-                                          margemNumeric >= 30 ? "bg-green-500" :
-                                          margemNumeric >= 15 ? "bg-yellow-500" :
-                                          "bg-red-500"
+                                          (produto.quantidadeEstoque || 0) < 20 
+                                            ? "bg-red-500" 
+                                            : (produto.quantidadeEstoque || 0) > 50 
+                                            ? "bg-green-500" 
+                                            : "bg-yellow-500"
                                         }`}
                                       />
-                                    )}
-                                  </div>
-                                </TableCell>
-                                <TableCell className="text-center py-4">
-                                  <div className="flex items-center justify-center gap-2">
-                                    <span className="font-semibold text-gray-800 bg-[#FFD300]/20 px-3 py-1 rounded-lg">
-                                      {produto.quantidadeEstoque || 0}
-                                    </span>
-                                    <div
-                                      className={`w-2 h-2 rounded-full ${
-                                        (produto.quantidadeEstoque || 0) < 20 
-                                          ? "bg-red-500" 
-                                          : (produto.quantidadeEstoque || 0) > 50 
-                                          ? "bg-green-500" 
-                                          : "bg-yellow-500"
-                                      }`}
-                                    />
-                                  </div>
-                                </TableCell>
-                                <TableCell className="text-center py-4">
-                                  <Badge 
-                                    variant={produto.ativo ? "default" : "secondary"} 
-                                    className={`text-xs ${
-                                      produto.ativo 
-                                        ? 'bg-green-100 text-green-800 hover:bg-green-200' 
-                                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                                    }`}
-                                  >
-                                    <div className="flex items-center gap-1">
-                                      <div className={`w-1.5 h-1.5 rounded-full ${
-                                        produto.ativo ? 'bg-green-500' : 'bg-gray-400'
-                                      }`}></div>
-                                      {produto.ativo ? "Ativo" : "Inativo"}
                                     </div>
-                                  </Badge>
-                                </TableCell>
-                                <TableCell className="py-4">
-                                  <div className="flex justify-center space-x-1">
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => openViewDialog(produto)}
-                                      className="h-9 w-9 p-0 hover:bg-blue-100 hover:text-blue-700 transition-colors rounded-lg"
-                                      title="Visualizar"
+                                  </TableCell>
+                                  <TableCell className="text-center py-4">
+                                    <Badge 
+                                      variant={produto.ativo ? "default" : "secondary"} 
+                                      className={`text-xs ${
+                                        produto.ativo 
+                                          ? 'bg-green-100 text-green-800 hover:bg-green-200' 
+                                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                      }`}
                                     >
-                                      <Eye className="w-4 h-4" />
-                                    </Button>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => openEditDialog(produto)}
-                                      className="h-9 w-9 p-0 hover:bg-[#FFD300]/30 hover:text-[#0C0C0C] transition-colors rounded-lg"
-                                      title="Editar"
-                                    >
-                                      <Edit className="w-4 h-4" />
-                                    </Button>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => produto.id && handleDeleteProduto(produto.id)}
-                                      className="h-9 w-9 p-0 text-red-600 hover:text-red-700 hover:bg-red-100 transition-colors rounded-lg"
-                                      title="Excluir"
-                                    >
-                                      <Trash2 className="w-4 h-4" />
-                                    </Button>
-                                  </div>
-                                </TableCell>
-                              </TableRow>
-                            );
-                          })}
-                        </TableBody>
-                      </Table>
-                    </div>
+                                      <div className="flex items-center gap-1">
+                                        <div className={`w-1.5 h-1.5 rounded-full ${
+                                          produto.ativo ? 'bg-green-500' : 'bg-gray-400'
+                                        }`}></div>
+                                        {produto.ativo ? "Ativo" : "Inativo"}
+                                      </div>
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell className="py-4">
+                                    <div className="flex justify-center space-x-1">
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => openViewDialog(produto)}
+                                        className="h-9 w-9 p-0 hover:bg-blue-100 hover:text-blue-700 transition-colors rounded-lg"
+                                        title="Visualizar"
+                                      >
+                                        <Eye className="w-4 h-4" />
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => openEditDialog(produto)}
+                                        className="h-9 w-9 p-0 hover:bg-[#FFD300]/30 hover:text-[#0C0C0C] transition-colors rounded-lg"
+                                        title="Editar"
+                                      >
+                                        <Edit className="w-4 h-4" />
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => produto.id && handleDeleteProduto(produto.id)}
+                                        className="h-9 w-9 p-0 text-red-600 hover:text-red-700 hover:bg-red-100 transition-colors rounded-lg"
+                                        title="Excluir"
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                      </Button>
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               )}

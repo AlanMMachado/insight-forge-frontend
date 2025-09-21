@@ -17,10 +17,13 @@ import { Badge } from "@/components/ui/badge"
 import { format, parseISO, isValid } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import AuthenticatedLayout from "@/components/authenticated-layout"
+import MobileDataCard, { createDefaultActions, CardField } from "@/components/mobile-data-card"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 export default function MovimentacoesPage() {
   const router = useRouter()
   const { toast } = useToast()
+  const isMobile = useIsMobile()
   type MovimentacaoWithProduto = Movimentacao & { produtoCompleto?: Produto }
   
   const [movimentacoes, setMovimentacoes] = useState<MovimentacaoWithProduto[]>([])
@@ -348,6 +351,58 @@ export default function MovimentacoesPage() {
     })
     setShowEditDialog(true)
   }
+
+  // Função para renderizar movimentação como card mobile
+  const renderMovimentacaoCard = (movimentacao: MovimentacaoWithProduto, index: number) => {
+    const parsedDate = parseISO(movimentacao.dataMovimentacao);
+    const dataFormatada = isValid(parsedDate)
+      ? format(parsedDate, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })
+      : "-";
+
+    const tipoMovimentacao = movimentacao.tipoMovimentacao?.toLowerCase() === 'compra' ? 'Compra' : 'Venda';
+    const isCompra = tipoMovimentacao === 'Compra';
+
+    const fields: CardField[] = [
+      {
+        label: "Categoria",
+        value: movimentacao.produtoCompleto?.categoria || "Sem categoria",
+        className: "font-medium text-gray-600"
+      },
+      {
+        label: "Data",
+        value: dataFormatada,
+        className: "text-gray-700"
+      },
+      {
+        label: "Tipo",
+        value: tipoMovimentacao,
+        isStatus: true,
+        statusVariant: isCompra ? "default" : "secondary"
+      },
+      {
+        label: "Quantidade",
+        value: `${movimentacao.quantidadeMovimentada} unid.`,
+        className: "font-semibold text-gray-800"
+      }
+    ];
+
+    const actions = [
+      createDefaultActions.view(() => openViewDialog(movimentacao)),
+      createDefaultActions.edit(() => openEditDialog(movimentacao)),
+      createDefaultActions.delete(() => handleDeleteMovimentacao(movimentacao.id))
+    ];
+
+    return (
+      <MobileDataCard
+        key={movimentacao.id}
+        title={movimentacao.produtoCompleto?.nome || 'Produto não encontrado'}
+        subtitle={`Movimentação ${tipoMovimentacao.toLowerCase()}`}
+        fields={fields}
+        actions={actions}
+        className="mb-4"
+      />
+    );
+  };
 
   const handleUpdateMovimentacao = async () => {
     if (!selectedMovimentacao?.id) return
@@ -759,119 +814,127 @@ export default function MovimentacoesPage() {
                     </div>
                   </CardHeader>
                   <CardContent className="p-0">
-                    <div className="overflow-x-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow className="bg-gray-50/50 border-b-2 border-[#FFD300]/20">
-                            <TableHead className="min-w-[120px] font-semibold text-gray-700">Produto</TableHead>
-                            <TableHead 
-                              className="hidden md:table-cell cursor-pointer select-none hover:bg-[#FFD300]/10 transition-colors font-semibold text-gray-700 rounded-lg min-w-[100px]"
-                              onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
-                            >
-                              <div className="flex items-center gap-2">
-                                Data
-                                {sortOrder === 'desc' ? (
-                                  <ArrowDown className="h-4 w-4 text-[#FFD300]" />
-                                ) : (
-                                  <ArrowUp className="h-4 w-4 text-[#FFD300]" />
-                                )}
-                              </div>
-                            </TableHead>
-                            <TableHead className="hidden lg:table-cell font-semibold text-gray-700 min-w-[80px]">Tipo</TableHead>
-                            <TableHead className="text-center font-semibold text-gray-700 min-w-[80px]">Quantidade</TableHead>
-                            <TableHead className="text-center min-w-[90px] font-semibold text-gray-700">Ações</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {filteredMovimentacoes.map((movimentacao, index) => (
-                            <TableRow 
-                              key={movimentacao.id}
-                              className={`hover:bg-[#FFFDF0] transition-colors ${
-                                index % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'
-                              }`}
-                            >
-                              <TableCell className="py-4">
-                                <div className="space-y-1">
-                                  <div className="font-medium text-gray-900">{movimentacao.produtoCompleto?.nome || 'Produto não encontrado'}</div>
-                                  <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-md inline-block">
-                                    {movimentacao.produtoCompleto?.categoria || '-'}
+                    {isMobile ? (
+                      // Renderização mobile com cards
+                      <div className="p-4 space-y-4">
+                        {filteredMovimentacoes.map((movimentacao, index) => renderMovimentacaoCard(movimentacao, index))}
+                      </div>
+                    ) : (
+                      // Renderização desktop com tabela
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow className="bg-gray-50/50 border-b-2 border-[#FFD300]/20">
+                              <TableHead className="min-w-[120px] font-semibold text-gray-700">Produto</TableHead>
+                              <TableHead 
+                                className="hidden md:table-cell cursor-pointer select-none hover:bg-[#FFD300]/10 transition-colors font-semibold text-gray-700 rounded-lg min-w-[100px]"
+                                onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
+                              >
+                                <div className="flex items-center gap-2">
+                                  Data
+                                  {sortOrder === 'desc' ? (
+                                    <ArrowDown className="h-4 w-4 text-[#FFD300]" />
+                                  ) : (
+                                    <ArrowUp className="h-4 w-4 text-[#FFD300]" />
+                                  )}
+                                </div>
+                              </TableHead>
+                              <TableHead className="hidden lg:table-cell font-semibold text-gray-700 min-w-[80px]">Tipo</TableHead>
+                              <TableHead className="text-center font-semibold text-gray-700 min-w-[80px]">Quantidade</TableHead>
+                              <TableHead className="text-center min-w-[90px] font-semibold text-gray-700">Ações</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {filteredMovimentacoes.map((movimentacao, index) => (
+                              <TableRow 
+                                key={movimentacao.id}
+                                className={`hover:bg-[#FFFDF0] transition-colors ${
+                                  index % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'
+                                }`}
+                              >
+                                <TableCell className="py-4">
+                                  <div className="space-y-1">
+                                    <div className="font-medium text-gray-900">{movimentacao.produtoCompleto?.nome || 'Produto não encontrado'}</div>
+                                    <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-md inline-block">
+                                      {movimentacao.produtoCompleto?.categoria || '-'}
+                                    </div>
+                                    <div className="text-xs text-gray-500 md:hidden mt-1">
+                                      {(() => {
+                                        const parsedDate = parseISO(movimentacao.dataMovimentacao);
+                                        return isValid(parsedDate)
+                                          ? format(parsedDate, "dd/MM/yyyy", { locale: ptBR })
+                                          : "-";
+                                      })()}
+                                    </div>
+                                    <div className="text-xs text-gray-500 lg:hidden">
+                                      {movimentacao.tipoMovimentacao?.toLowerCase() === 'compra' ? 'Compra' : 'Venda'}
+                                    </div>
                                   </div>
-                                  <div className="text-xs text-gray-500 md:hidden mt-1">
+                                </TableCell>
+                                <TableCell className="hidden md:table-cell py-4">
+                                  <div className="text-gray-700">
                                     {(() => {
                                       const parsedDate = parseISO(movimentacao.dataMovimentacao);
                                       return isValid(parsedDate)
-                                        ? format(parsedDate, "dd/MM/yyyy", { locale: ptBR })
+                                        ? format(parsedDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })
                                         : "-";
                                     })()}
                                   </div>
-                                  <div className="text-xs text-gray-500 lg:hidden">
+                                </TableCell>
+                                <TableCell className="hidden lg:table-cell py-4">
+                                  <Badge 
+                                    variant={movimentacao.tipoMovimentacao?.toLowerCase() === 'compra' ? 'default' : 'secondary'}
+                                    className={
+                                      movimentacao.tipoMovimentacao?.toLowerCase() === 'compra' 
+                                        ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                                        : 'bg-blue-100 text-blue-800 hover:bg-blue-200'
+                                    }
+                                  >
                                     {movimentacao.tipoMovimentacao?.toLowerCase() === 'compra' ? 'Compra' : 'Venda'}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="text-center py-4">
+                                  <span className="font-semibold text-gray-800 bg-[#FFD300]/20 px-3 py-1 rounded-lg">
+                                    {movimentacao.quantidadeMovimentada}
+                                  </span>
+                                </TableCell>
+                                <TableCell className="py-4">
+                                  <div className="flex justify-center space-x-1">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => openViewDialog(movimentacao)}
+                                      className="h-9 w-9 p-0 hover:bg-blue-100 hover:text-blue-700 transition-colors rounded-lg"
+                                      title="Visualizar"
+                                    >
+                                      <Eye className="w-4 h-4" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => openEditDialog(movimentacao)}
+                                      className="h-9 w-9 p-0 hover:bg-[#FFD300]/30 hover:text-[#0C0C0C] transition-colors rounded-lg"
+                                      title="Editar"
+                                    >
+                                      <Edit className="w-4 h-4" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleDeleteMovimentacao(movimentacao.id)}
+                                      className="h-9 w-9 p-0 text-red-600 hover:text-red-700 hover:bg-red-100 transition-colors rounded-lg"
+                                      title="Excluir"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </Button>
                                   </div>
-                                </div>
-                              </TableCell>
-                              <TableCell className="hidden md:table-cell py-4">
-                                <div className="text-gray-700">
-                                  {(() => {
-                                    const parsedDate = parseISO(movimentacao.dataMovimentacao);
-                                    return isValid(parsedDate)
-                                      ? format(parsedDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })
-                                      : "-";
-                                  })()}
-                                </div>
-                              </TableCell>
-                              <TableCell className="hidden lg:table-cell py-4">
-                                <Badge 
-                                  variant={movimentacao.tipoMovimentacao?.toLowerCase() === 'compra' ? 'default' : 'secondary'}
-                                  className={
-                                    movimentacao.tipoMovimentacao?.toLowerCase() === 'compra' 
-                                      ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                                      : 'bg-blue-100 text-blue-800 hover:bg-blue-200'
-                                  }
-                                >
-                                  {movimentacao.tipoMovimentacao?.toLowerCase() === 'compra' ? 'Compra' : 'Venda'}
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="text-center py-4">
-                                <span className="font-semibold text-gray-800 bg-[#FFD300]/20 px-3 py-1 rounded-lg">
-                                  {movimentacao.quantidadeMovimentada}
-                                </span>
-                              </TableCell>
-                              <TableCell className="py-4">
-                                <div className="flex justify-center space-x-1">
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => openViewDialog(movimentacao)}
-                                    className="h-9 w-9 p-0 hover:bg-blue-100 hover:text-blue-700 transition-colors rounded-lg"
-                                    title="Visualizar"
-                                  >
-                                    <Eye className="w-4 h-4" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => openEditDialog(movimentacao)}
-                                    className="h-9 w-9 p-0 hover:bg-[#FFD300]/30 hover:text-[#0C0C0C] transition-colors rounded-lg"
-                                    title="Editar"
-                                  >
-                                    <Edit className="w-4 h-4" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleDeleteMovimentacao(movimentacao.id)}
-                                    className="h-9 w-9 p-0 text-red-600 hover:text-red-700 hover:bg-red-100 transition-colors rounded-lg"
-                                    title="Excluir"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </Button>
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               )}

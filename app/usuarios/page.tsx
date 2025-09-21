@@ -17,11 +17,14 @@ import { ApiService, Usuario } from "@/lib/api"
 import { format, parseISO } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import AuthenticatedLayout from "@/components/authenticated-layout"
+import MobileDataCard, { createDefaultActions, CardField } from "@/components/mobile-data-card"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 export default function UsuariosPage() {
   const { toast } = useToast()
   const { user, isLoading: authLoading } = useAuth()
   const router = useRouter()
+  const isMobile = useIsMobile()
   
   const [usuarios, setUsuarios] = useState<Usuario[]>([])
   const [loading, setLoading] = useState(false)
@@ -235,6 +238,52 @@ export default function UsuariosPage() {
       </Badge>
     )
   }
+
+  // Função para renderizar usuário como card mobile
+  const renderUsuarioCard = (usuario: Usuario, index: number) => {
+    const dataCriacao = (usuario.createdAt || usuario.dataCriacao)
+      ? format(parseISO(usuario.createdAt || usuario.dataCriacao!), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })
+      : "-";
+
+    const isAdmin = usuario.role === 'ADMIN';
+    const roleLabel = isAdmin ? "Administrador" : "Usuário";
+
+    const fields: CardField[] = [
+      {
+        label: "Email",
+        value: usuario.email,
+        className: "text-gray-700 break-all"
+      },
+      {
+        label: "Tipo",
+        value: roleLabel,
+        isStatus: true,
+        statusVariant: isAdmin ? "destructive" : "default"
+      },
+      {
+        label: "Data de Criação",
+        value: dataCriacao,
+        className: "text-gray-600 text-sm"
+      }
+    ];
+
+    const actions = [
+      createDefaultActions.view(() => openViewDialog(usuario)),
+      createDefaultActions.edit(() => openEditDialog(usuario)),
+      createDefaultActions.delete(() => usuario.id && handleDeleteUsuario(usuario.id))
+    ];
+
+    return (
+      <MobileDataCard
+        key={usuario.id}
+        title={usuario.nome}
+        subtitle={`${roleLabel} • ${usuario.email}`}
+        fields={fields}
+        actions={actions}
+        className="mb-4"
+      />
+    );
+  };
 
   const filterUsuarios = async (roleParam?: 'ALL' | 'USER' | 'ADMIN') => {
     try {
@@ -499,74 +548,82 @@ export default function UsuariosPage() {
 
                 {/* Tabela */}
                 <div className="px-0 py-0">
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader className="bg-gray-50/50">
-                        <TableRow className="hover:bg-gray-50/50">
-                          <TableHead className="font-semibold text-gray-900 text-left min-w-[140px]">Nome</TableHead>
-                          <TableHead className="font-semibold text-gray-900 text-left min-w-[120px] hidden md:table-cell">Email</TableHead>
-                          <TableHead className="font-semibold text-gray-900 text-left min-w-[80px]">Tipo</TableHead>
-                          <TableHead className="font-semibold text-gray-900 text-left min-w-[120px] hidden lg:table-cell">Data de Criação</TableHead>
-                          <TableHead className="font-semibold text-gray-900 text-center min-w-[90px]">Ações</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {usuarios.map((usuario) => (
-                          <TableRow key={usuario.id} className="border-b border-gray-100 hover:bg-gray-50/30 transition-colors">
-                            <TableCell className="font-medium text-gray-900">
-                              <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 bg-gradient-to-br from-[#FFD300]/20 to-[#FFD300]/10 rounded-full flex items-center justify-center">
-                                  <User className="w-4 h-4 text-[#B8860B]" />
-                                </div>
-                                <div>
-                                  <div className="font-medium text-gray-900">{usuario.nome}</div>
-                                  <div className="text-sm text-gray-500 md:hidden">{usuario.email}</div>
-                                </div>
-                              </div>
-                            </TableCell>
-                            <TableCell className="text-gray-600 hidden md:table-cell">{usuario.email}</TableCell>
-                            <TableCell>
-                              {getRoleBadge(usuario.role)}
-                            </TableCell>
-                            <TableCell className="text-gray-600 hidden lg:table-cell">
-                              {(usuario.createdAt || usuario.dataCriacao)
-                                ? format(parseISO(usuario.createdAt || usuario.dataCriacao!), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })
-                                : "-"
-                              }
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <div className="flex items-center justify-center gap-2">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => openViewDialog(usuario)}
-                                  className="h-8 w-8 p-0 hover:bg-[#FFD300]/10"
-                                >
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => openEditDialog(usuario)}
-                                  className="h-8 w-8 p-0 hover:bg-[#FFD300]/10"
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => usuario.id && handleDeleteUsuario(usuario.id)}
-                                  className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
+                  {isMobile ? (
+                    // Renderização mobile com cards
+                    <div className="p-4 space-y-4">
+                      {usuarios.map((usuario, index) => renderUsuarioCard(usuario, index))}
+                    </div>
+                  ) : (
+                    // Renderização desktop com tabela
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader className="bg-gray-50/50">
+                          <TableRow className="hover:bg-gray-50/50">
+                            <TableHead className="font-semibold text-gray-900 text-left min-w-[140px]">Nome</TableHead>
+                            <TableHead className="font-semibold text-gray-900 text-left min-w-[120px] hidden md:table-cell">Email</TableHead>
+                            <TableHead className="font-semibold text-gray-900 text-left min-w-[80px]">Tipo</TableHead>
+                            <TableHead className="font-semibold text-gray-900 text-left min-w-[120px] hidden lg:table-cell">Data de Criação</TableHead>
+                            <TableHead className="font-semibold text-gray-900 text-center min-w-[90px]">Ações</TableHead>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
+                        </TableHeader>
+                        <TableBody>
+                          {usuarios.map((usuario) => (
+                            <TableRow key={usuario.id} className="border-b border-gray-100 hover:bg-gray-50/30 transition-colors">
+                              <TableCell className="font-medium text-gray-900">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-8 h-8 bg-gradient-to-br from-[#FFD300]/20 to-[#FFD300]/10 rounded-full flex items-center justify-center">
+                                    <User className="w-4 h-4 text-[#B8860B]" />
+                                  </div>
+                                  <div>
+                                    <div className="font-medium text-gray-900">{usuario.nome}</div>
+                                    <div className="text-sm text-gray-500 md:hidden">{usuario.email}</div>
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-gray-600 hidden md:table-cell">{usuario.email}</TableCell>
+                              <TableCell>
+                                {getRoleBadge(usuario.role)}
+                              </TableCell>
+                              <TableCell className="text-gray-600 hidden lg:table-cell">
+                                {(usuario.createdAt || usuario.dataCriacao)
+                                  ? format(parseISO(usuario.createdAt || usuario.dataCriacao!), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })
+                                  : "-"
+                                }
+                              </TableCell>
+                              <TableCell className="text-center">
+                                <div className="flex items-center justify-center gap-2">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => openViewDialog(usuario)}
+                                    className="h-8 w-8 p-0 hover:bg-[#FFD300]/10"
+                                  >
+                                    <Eye className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => openEditDialog(usuario)}
+                                    className="h-8 w-8 p-0 hover:bg-[#FFD300]/10"
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => usuario.id && handleDeleteUsuario(usuario.id)}
+                                    className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
                 </div>
               </>
             )}
