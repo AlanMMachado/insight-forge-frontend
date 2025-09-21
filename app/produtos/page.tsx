@@ -9,11 +9,10 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Package, Plus, Search, Edit, Trash2, Eye, Download, Filter, AlertTriangle, CheckCircle, Upload, Table2 } from "lucide-react"
+import { Package, Plus, Search, Edit, Trash2, Eye, Download, Filter, Upload, Table2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { ApiService, Produto } from "@/lib/api"
 import { CATEGORIAS_PRODUTOS } from "@/lib/categorias"
@@ -29,7 +28,6 @@ export default function ProdutosPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [filterCategoria, setFilterCategoria] = useState("")
   const [filterAtivo, setFilterAtivo] = useState<boolean | null>(null)
-  // Novo estado para controlar a visibilidade dos resultados
   const [hasSearched, setHasSearched] = useState(false)
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
@@ -39,17 +37,16 @@ export default function ProdutosPage() {
     nome: "",
     categoria: "",
     preco: 0,
-    custo: null, // Novo campo custo
+    custo: null,
     quantidadeEstoque: 0,
     ativo: true,
     descricao: ""
   })
   const [categorias, setCategorias] = useState<string[]>([]);
   const [novaCategoria, setNovaCategoria] = useState("");
-  const [showNewCategoryDialog, setShowNewCategoryDialog] = useState(false); // Novo estado para o diálogo de nova categoria
+  const [showNewCategoryDialog, setShowNewCategoryDialog] = useState(false);
   const { toast } = useToast()
 
-  // Atualizar loadProdutos para setar hasSearched
   const loadProdutos = useCallback(async () => {
     try {
       setLoading(true)
@@ -67,7 +64,6 @@ export default function ProdutosPage() {
     }
   }, [toast])
 
-  // Atualizar searchProdutos para setar hasSearched
   const searchProdutos = async () => {
     if (!searchTerm.trim()) {
       toast({
@@ -96,6 +92,33 @@ export default function ProdutosPage() {
   }
 
   const handleCreateProduto = async () => {
+    if (!formData.nome.trim()) {
+      toast({
+        title: "Campo obrigatório",
+        description: "Nome do produto é obrigatório",
+        variant: "destructive"
+      })
+      return
+    }
+
+    if (!formData.preco || formData.preco <= 0) {
+      toast({
+        title: "Valor inválido",
+        description: "O preço deve ser maior que zero",
+        variant: "destructive"
+      })
+      return
+    }
+
+    if (formData.custo !== null && formData.custo !== undefined && formData.custo < 0) {
+      toast({
+        title: "Valor inválido",
+        description: "O custo não pode ser negativo",
+        variant: "destructive"
+      })
+      return
+    }
+
     try {
       await ApiService.criarProduto(formData)
       toast({
@@ -116,6 +139,33 @@ export default function ProdutosPage() {
 
   const handleUpdateProduto = async () => {
     if (!selectedProduto?.id) return
+
+    if (!formData.nome.trim()) {
+      toast({
+        title: "Campo obrigatório",
+        description: "Nome do produto é obrigatório",
+        variant: "destructive"
+      })
+      return
+    }
+
+    if (!formData.preco || formData.preco <= 0) {
+      toast({
+        title: "Valor inválido",
+        description: "O preço deve ser maior que zero",
+        variant: "destructive"
+      })
+      return
+    }
+
+    if (formData.custo !== null && formData.custo !== undefined && formData.custo < 0) {
+      toast({
+        title: "Valor inválido",
+        description: "O custo não pode ser negativo",
+        variant: "destructive"
+      })
+      return
+    }
 
     try {
       await ApiService.atualizarProduto(selectedProduto.id, formData)
@@ -184,7 +234,7 @@ export default function ProdutosPage() {
       nome: "",
       categoria: "",
       preco: 0,
-      custo: null, // Reseta custo como null
+      custo: null,
       quantidadeEstoque: 0,
       ativo: true,
       descricao: ""
@@ -192,9 +242,7 @@ export default function ProdutosPage() {
     setSelectedProduto(null)
   }
 
-  // Função para renderizar produto como card mobile
   const renderProdutoCard = (produto: Produto, index: number) => {
-    // Calcular margem de lucro se custo e preço estiverem definidos
     const calcularMargem = () => {
       if (produto.preco && produto.custo && produto.custo > 0) {
         const margem = ((produto.preco - produto.custo) / produto.preco) * 100;
@@ -269,7 +317,6 @@ export default function ProdutosPage() {
       <MobileDataCard
         key={produto.id}
         title={produto.nome}
-        subtitle={produto.descricao}
         fields={fields}
         actions={actions}
         className="mb-4"
@@ -283,7 +330,7 @@ export default function ProdutosPage() {
       nome: produto.nome,
       categoria: produto.categoria || "",
       preco: produto.preco || 0,
-      custo: produto.custo || null, // Inclui custo no formulário de edição
+      custo: produto.custo || null,
       quantidadeEstoque: produto.quantidadeEstoque || 0,
       ativo: produto.ativo ?? true,
       descricao: produto.descricao || ""
@@ -296,17 +343,14 @@ export default function ProdutosPage() {
     setShowViewDialog(true)
   }
 
-  // Filtrar produtos
   const filteredProdutos = produtos.filter(produto => {
     const matchesCategoria = filterCategoria === "" || produto.categoria === filterCategoria
     const matchesAtivo = filterAtivo === null || produto.ativo === filterAtivo
     return matchesCategoria && matchesAtivo
   })
 
-  // Obter categorias únicas para o filtro
   const categoriasUnicas = Array.from(new Set(produtos.map(p => p.categoria).filter(Boolean)))
 
-  // Função para carregar categorias
   const loadCategorias = useCallback(async () => {
     try {
       const data = await ApiService.listarCategorias();
@@ -476,9 +520,9 @@ export default function ProdutosPage() {
                 <div className="mx-auto w-20 h-20 bg-gradient-to-br from-[#FFD300]/20 to-[#FFD300]/10 rounded-full flex items-center justify-center mb-6">
                   <Search className="h-10 w-10 text-[#FFD300]" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Use a busca ou os filtros</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Use a busca ou adicione um produto</h3>
                 <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                  Digite o nome do produto ou use os filtros para visualizar produtos do seu catálogo.
+                  Digite o nome do produto, busque todos ou use os filtros para visualizar produtos do seu catálogo.
                 </p>
                 <Button
                   onClick={() => setShowCreateDialog(true)}
@@ -517,7 +561,7 @@ export default function ProdutosPage() {
                 <CardHeader className="pb-4">
                   <div className="flex items-center gap-2">
                     <Filter className="h-4 w-4 text-gray-600" />
-                    <CardTitle className="text-base text-gray-700">Filtros Rápidos</CardTitle>
+                    <CardTitle className="text-base text-gray-700">Filtros</CardTitle>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -624,12 +668,10 @@ export default function ProdutosPage() {
                   </CardHeader>
                   <CardContent className="p-0">
                     {isMobile ? (
-                      // Renderização mobile com cards
                       <div className="p-4 space-y-4">
                         {filteredProdutos.map((produto, index) => renderProdutoCard(produto, index))}
                       </div>
                     ) : (
-                      // Renderização desktop com tabela
                       <div className="overflow-x-auto">
                         <Table>
                           <TableHeader>
@@ -646,7 +688,6 @@ export default function ProdutosPage() {
                           </TableHeader>
                           <TableBody>
                             {filteredProdutos.map((produto, index) => {
-                              // Calcular margem de lucro se custo e preço estiverem definidos
                               const calcularMargem = () => {
                                 if (produto.preco && produto.custo && produto.custo > 0) {
                                   const margem = ((produto.preco - produto.custo) / produto.preco) * 100;
@@ -805,11 +846,12 @@ export default function ProdutosPage() {
       <Dialog open={showCreateDialog} onOpenChange={(open) => {
         setShowCreateDialog(open);
         if (open) {
-          resetForm(); // Garantir formulário limpo ao abrir o diálogo de criação
-          // Só carrega categorias se ainda não foram carregadas
+          resetForm();
           if (categorias.length === 0) {
             loadCategorias();
           }
+        } else {
+          resetForm();
         }
       }}>
         <DialogContent className="max-w-2xl w-[95vw] sm:w-full border-[#FFD300]/20 shadow-xl rounded-2xl max-h-[90vh] overflow-y-auto">
@@ -895,7 +937,7 @@ export default function ProdutosPage() {
                     value={formData.preco === 0 ? "" : formData.preco || ""}
                     onChange={(e) => {
                       const value = parseFloat(e.target.value);
-                      setFormData({ ...formData, preco: isNaN(value) ? 0 : value });
+                      setFormData({ ...formData, preco: isNaN(value) || value < 0 ? 0 : value });
                     }}
                     placeholder="0,00"
                     className="border-gray-200 focus:border-[#FFD300] focus:ring-[#FFD300]/20 rounded-xl h-11"
@@ -919,7 +961,7 @@ export default function ProdutosPage() {
                     value={formData.custo === null || formData.custo === 0 ? "" : formData.custo || ""}
                     onChange={(e) => {
                       const value = e.target.value === "" ? null : parseFloat(e.target.value);
-                      setFormData({ ...formData, custo: value === null ? null : (isNaN(value as number) ? null : value) });
+                      setFormData({ ...formData, custo: value === null ? null : (isNaN(value as number) || value < 0 ? null : value) });
                     }}
                     placeholder="0,00"
                     className="border-gray-200 focus:border-[#FFD300] focus:ring-[#FFD300]/20 rounded-xl h-11"
@@ -1078,10 +1120,10 @@ export default function ProdutosPage() {
                     type="number"
                     step="0.01"
                     min="0"
-                    value={formData.preco || ""} // Exibe vazio ao invés de 0
+                    value={formData.preco || ""}
                     onChange={(e) => {
                       const value = parseFloat(e.target.value);
-                      setFormData({ ...formData, preco: isNaN(value) ? 0 : value }); // Define 0 se o valor for inválido
+                      setFormData({ ...formData, preco: isNaN(value) || value < 0 ? 0 : value });
                     }}
                     placeholder="0.00"
                     className="border-gray-200 focus:border-[#FFD300] focus:ring-[#FFD300]/20 rounded-xl h-11"
@@ -1102,10 +1144,10 @@ export default function ProdutosPage() {
                     type="number"
                     step="0.01"
                     min="0"
-                    value={formData.custo || ""} // Exibe vazio se null
+                    value={formData.custo || ""}
                     onChange={(e) => {
                       const value = e.target.value === "" ? null : parseFloat(e.target.value);
-                      setFormData({ ...formData, custo: value === null ? null : (isNaN(value as number) ? null : value) });
+                      setFormData({ ...formData, custo: value === null ? null : (isNaN(value as number) || value < 0 ? null : value) });
                     }}
                     placeholder="0.00"
                     className="border-gray-200 focus:border-[#FFD300] focus:ring-[#FFD300]/20 rounded-xl h-11"
@@ -1124,10 +1166,10 @@ export default function ProdutosPage() {
                   id="edit-estoque"
                   type="number"
                   min="0"
-                  value={formData.quantidadeEstoque || ""} // Exibe vazio ao invés de 0
+                  value={formData.quantidadeEstoque || ""}
                   onChange={(e) => {
                     const value = parseInt(e.target.value);
-                    setFormData({ ...formData, quantidadeEstoque: isNaN(value) ? 0 : value }); // Define 0 se o valor for inválido
+                    setFormData({ ...formData, quantidadeEstoque: isNaN(value) ? 0 : value });
                   }}
                   placeholder="Ex: 100"
                   className="border-gray-200 focus:border-[#FFD300] focus:ring-[#FFD300]/20 rounded-xl h-11"

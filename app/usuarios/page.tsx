@@ -52,7 +52,6 @@ export default function UsuariosPage() {
   })
   const [filterRole, setFilterRole] = useState<'USER' | 'ADMIN' | 'ALL'>('ALL')
 
-  // Verificar se o usuário tem permissão de acesso
   useEffect(() => {
     if (!authLoading && user && user.role !== 'ADMIN') {
       router.push('/unauthorized')
@@ -60,7 +59,6 @@ export default function UsuariosPage() {
     }
   }, [user, authLoading, router])
 
-  // Carregar usuários
   const loadUsuarios = async () => {
     try {
       setLoading(true)
@@ -78,7 +76,6 @@ export default function UsuariosPage() {
     }
   }
 
-  // Buscar usuários por nome
   const searchUsuarios = async () => {
     if (!searchTerm.trim()) {
       toast({
@@ -106,7 +103,6 @@ export default function UsuariosPage() {
     }
   }
 
-  // Criar usuário
   const handleCreateUsuario = async () => {
     if (!formData.nome.trim() || !formData.email.trim() || !formData.password.trim()) {
       toast({
@@ -117,7 +113,6 @@ export default function UsuariosPage() {
       return
     }
 
-    // Validar role se fornecido
     if (formData.role && !['USER', 'ADMIN'].includes(formData.role)) {
       toast({
         title: "Role inválido",
@@ -145,7 +140,6 @@ export default function UsuariosPage() {
     }
   }
 
-  // Atualizar usuário
   const handleUpdateUsuario = async () => {
     if (!selectedUsuario?.id) return
 
@@ -167,7 +161,6 @@ export default function UsuariosPage() {
     }
   }
 
-  // Excluir usuário
   const handleDeleteUsuario = async (id: number) => {
     if (!confirm("Tem certeza que deseja excluir este usuário?")) return
 
@@ -239,7 +232,6 @@ export default function UsuariosPage() {
     )
   }
 
-  // Função para renderizar usuário como card mobile
   const renderUsuarioCard = (usuario: Usuario, index: number) => {
     const dataCriacao = (usuario.createdAt || usuario.dataCriacao)
       ? format(parseISO(usuario.createdAt || usuario.dataCriacao!), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })
@@ -305,13 +297,11 @@ export default function UsuariosPage() {
   }
 
   useEffect(() => {
-    // Carregar usuários quando a página for acessada
     if (!authLoading && user && user.role === 'ADMIN') {
       loadUsuarios()
     }
   }, [authLoading, user])
 
-  // Se não é admin, não renderizar nada (redirecionamento já foi feito)
   if (!authLoading && user && user.role !== 'ADMIN') {
     return null
   }
@@ -520,7 +510,7 @@ export default function UsuariosPage() {
                     <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                       <div className="flex items-center gap-2">
                         <Filter className="h-4 w-4 text-gray-500" />
-                        <span className="text-sm font-medium text-gray-700">Filtros Rápidos</span>
+                        <span className="text-sm font-medium text-gray-700">Filtros</span>
                       </div>
                       <div className="flex flex-col sm:flex-row gap-3 flex-1">
                         <div className="flex-1 min-w-0">
@@ -549,12 +539,10 @@ export default function UsuariosPage() {
                 {/* Tabela */}
                 <div className="px-0 py-0">
                   {isMobile ? (
-                    // Renderização mobile com cards
                     <div className="p-4 space-y-4">
                       {usuarios.map((usuario, index) => renderUsuarioCard(usuario, index))}
                     </div>
                   ) : (
-                    // Renderização desktop com tabela
                     <div className="overflow-x-auto">
                       <Table>
                         <TableHeader className="bg-gray-50/50">

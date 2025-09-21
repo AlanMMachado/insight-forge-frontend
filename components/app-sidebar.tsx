@@ -1,7 +1,6 @@
 "use client"
 
 import { BarChart3, MoveHorizontal, Home, Package, Users, Upload } from "lucide-react"
-import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { usePageLoading } from "@/hooks/use-page-loading"
@@ -65,19 +64,19 @@ export function AppSidebar() {
 
   // Navbar Mobile (visível apenas em telas pequenas)
   const MobileNavbar = () => (
-    <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-lg">
-      <div className="flex items-center justify-around py-2">
+    <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-sidebar border-t border-sidebar-accent shadow-lg">
+      <div className="flex items-center justify-around py-3">
         {filteredMenuItems.map((item) => (
           <button
             key={item.title}
             onClick={() => handleNavigation(item.url, item.title)}
-            className={`flex flex-col items-center p-2 min-w-0 flex-1 ${
+            className={`flex flex-col items-center p-2 min-w-0 flex-1 rounded-lg mx-1 transition-colors duration-200 ${
               pathname === item.url 
-                ? 'text-amber-500' 
-                : 'text-gray-500 hover:text-amber-500'
+                ? 'bg-amber-400 text-gray-900 font-medium' 
+                : 'text-white hover:bg-sidebar-accent hover:text-amber-400'
             }`}
           >
-            <item.icon className="w-5 h-5 mb-1" />
+            <item.icon className="w-6 h-6 mb-1" />
             <span className="text-xs font-medium truncate">{item.title}</span>
           </button>
         ))}

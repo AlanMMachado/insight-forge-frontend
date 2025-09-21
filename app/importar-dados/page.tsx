@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Progress } from "@/components/ui/progress"
-import { FileSpreadsheet, CheckCircle, AlertTriangle, Download, Upload, X } from "lucide-react"
+import { FileSpreadsheet, CheckCircle, AlertTriangle, Download, Upload, X, Package, MoveHorizontal } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { ApiService } from "@/lib/api"
 import { createProdutosTemplate, createMovimentacoesTemplate, downloadFile } from "@/lib/templates"
@@ -159,10 +159,10 @@ export default function ImportarDadosPage() {
     setIsDragOver(false)
   }
 
-  const removeFile = () => {
+  const resetFileSelection = () => {
     setSelectedFile(null)
+    setUploadProgress(0)
     setUploadStatus("idle")
-    setErrorMessage("")
     if (fileInputRef.current) {
       fileInputRef.current.value = ""
     }
@@ -204,14 +204,8 @@ export default function ImportarDadosPage() {
           description: result.mensagem,
         })
         
-        setTimeout(() => {
-          setSelectedFile(null)
-          setUploadProgress(0)
-          setUploadStatus("idle")
-          if (fileInputRef.current) {
-            fileInputRef.current.value = ""
-          }
-        }, 3000)
+        // Reset do arquivo imediatamente após conclusão
+        resetFileSelection()
 
       } else {
         const result = await ApiService.importarMovimentacoes(selectedFile)
@@ -223,6 +217,9 @@ export default function ImportarDadosPage() {
           setUploadStatus("partial")
           setImportResult(result)
           setShowResultDialog(true)
+          
+          // Reset do arquivo imediatamente após conclusão
+          resetFileSelection()
         } else {
           // Importação completa
           setUploadStatus("success")
@@ -231,14 +228,8 @@ export default function ImportarDadosPage() {
             description: result.mensagem,
           })
           
-          setTimeout(() => {
-            setSelectedFile(null)
-            setUploadProgress(0)
-            setUploadStatus("idle")
-            if (fileInputRef.current) {
-              fileInputRef.current.value = ""
-            }
-          }, 3000)
+          // Reset do arquivo imediatamente após conclusão
+          resetFileSelection()
         }
       }
 
@@ -305,12 +296,7 @@ export default function ImportarDadosPage() {
     
     // Limpar formulário
     setTimeout(() => {
-      setSelectedFile(null)
-      setUploadProgress(0)
-      setUploadStatus("idle")
-      if (fileInputRef.current) {
-        fileInputRef.current.value = ""
-      }
+      resetFileSelection()
     }, 1000)
     
     toast({
@@ -347,28 +333,23 @@ export default function ImportarDadosPage() {
   // Handler para cancelar re-importação
   const handleCancelReimport = () => {
     // Limpar formulário
-    setSelectedFile(null)
-    setUploadProgress(0)
-    setUploadStatus("idle")
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ""
-    }
+    resetFileSelection()
   }
 
   return (
     <AuthenticatedLayout>
-      <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+      <div className="p-3 sm:p-4 lg:p-6 space-y-4 sm:space-y-6">
         {/* Header */}
-        <div className="bg-gradient-to-r from-white to-[#FFFDF0] p-6 rounded-2xl border border-[#FFD300]/20 shadow-sm">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
-              <div className="p-3 bg-gradient-to-br from-[#FFD300] to-[#E6BD00] rounded-xl shadow-md">
-                <Upload className="h-8 w-8 text-[#0C0C0C]" />
+        <div className="bg-gradient-to-r from-white to-[#FFFDF0] p-4 sm:p-6 rounded-2xl border border-[#FFD300]/20 shadow-sm">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
+              <div className="p-2 sm:p-3 bg-gradient-to-br from-[#FFD300] to-[#E6BD00] rounded-xl shadow-md">
+                <Upload className="h-6 w-6 sm:h-8 sm:w-8 text-[#0C0C0C]" />
               </div>
               <div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-[#0C0C0C] mb-1">Importar Dados</h1>
-                <p className="text-gray-600 flex items-center gap-2">
-                  <span className="w-2 h-2 bg-[#FFD300] rounded-full"></span>
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-[#0C0C0C] mb-1">Importar Dados</h1>
+                <p className="text-gray-600 flex items-center gap-2 text-sm sm:text-base">
+                  <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-[#FFD300] rounded-full"></span>
                   Importe produtos ou movimentações através de planilhas
                 </p>
               </div>
@@ -376,9 +357,9 @@ export default function ImportarDadosPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6">
           {/* Card Principal - Upload */}
-          <div className="lg:col-span-2">
+          <div className="xl:col-span-2 order-2 xl:order-1">
             <Card className="border-[#FFD300]/20 shadow-sm hover:shadow-md transition-shadow duration-200">
               <CardHeader className="bg-gradient-to-r from-[#FFFDF0] to-white">
                 <div className="flex items-center gap-3">
@@ -402,21 +383,27 @@ export default function ImportarDadosPage() {
                   <RadioGroup 
                     value={importType} 
                     onValueChange={(value: ImportType) => setImportType(value)}
-                    className="grid grid-cols-2 gap-4"
+                    className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4"
                     disabled={isUploading}
                   >
-                    <div className="flex items-center space-x-3 p-4 border rounded-xl hover:border-[#FFD300] hover:bg-[#FFFDF0] transition-all duration-200 border-[#FFD300]/20">
+                    <div className="flex items-center space-x-3 p-3 sm:p-4 border rounded-xl hover:border-[#FFD300] hover:bg-[#FFFDF0] transition-all duration-200 border-[#FFD300]/20">
                       <RadioGroupItem value="produtos" id="produtos" />
-                      <Label htmlFor="produtos" className="cursor-pointer flex-1">
-                        <div className="font-medium text-[#0C0C0C]">Produtos</div>
-                        <div className="text-sm text-gray-600">Cadastro de produtos</div>
+                      <div className="p-2 bg-[#FFD300]/20 rounded-lg flex-shrink-0">
+                        <Package className="w-4 h-4 sm:w-5 sm:h-5 text-[#FFD300]" />
+                      </div>
+                      <Label htmlFor="produtos" className="cursor-pointer flex-1 min-w-0">
+                        <div className="font-medium text-[#0C0C0C] text-sm sm:text-base">Produtos</div>
+                        <div className="text-xs sm:text-sm text-gray-600">Cadastro de produtos</div>
                       </Label>
                     </div>
-                    <div className="flex items-center space-x-3 p-4 border rounded-xl hover:border-[#FFD300] hover:bg-[#FFFDF0] transition-all duration-200 border-[#FFD300]/20">
+                    <div className="flex items-center space-x-3 p-3 sm:p-4 border rounded-xl hover:border-[#FFD300] hover:bg-[#FFFDF0] transition-all duration-200 border-[#FFD300]/20">
                       <RadioGroupItem value="movimentacoes" id="movimentacoes" />
-                      <Label htmlFor="movimentacoes" className="cursor-pointer flex-1">
-                        <div className="font-medium text-[#0C0C0C]">Movimentações</div>
-                        <div className="text-sm text-gray-600">Entrada/saída estoque</div>
+                      <div className="p-2 bg-[#FFD300]/20 rounded-lg flex-shrink-0">
+                        <MoveHorizontal className="w-4 h-4 sm:w-5 sm:h-5 text-[#FFD300]" />
+                      </div>
+                      <Label htmlFor="movimentacoes" className="cursor-pointer flex-1 min-w-0">
+                        <div className="font-medium text-[#0C0C0C] text-sm sm:text-base">Movimentações</div>
+                        <div className="text-xs sm:text-sm text-gray-600">Entrada/saída estoque</div>
                       </Label>
                     </div>
                   </RadioGroup>
@@ -429,7 +416,7 @@ export default function ImportarDadosPage() {
                   </Label>
                   <div 
                     className={`
-                      border-2 border-dashed rounded-xl p-8 text-center transition-all duration-200
+                      border-2 border-dashed rounded-xl p-6 sm:p-8 text-center transition-all duration-200
                       ${isDragOver 
                         ? "border-[#FFD300] bg-[#FFFDF0]" 
                         : selectedFile 
@@ -460,7 +447,8 @@ export default function ImportarDadosPage() {
                             size="sm"
                             onClick={(e) => {
                               e.stopPropagation()
-                              removeFile()
+                              setErrorMessage("")
+                              resetFileSelection()
                             }}
                             className="h-8 w-8 p-0 hover:bg-red-100"
                             disabled={isUploading}
@@ -471,8 +459,8 @@ export default function ImportarDadosPage() {
                       </div>
                     ) : (
                       <div className="space-y-4">
-                        <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto">
-                          <Upload className={`w-8 h-8 ${isDragOver ? "text-[#FFD300]" : "text-muted-foreground"}`} />
+                        <div className="w-16 h-16 sm:w-20 sm:h-20 bg-muted rounded-full flex items-center justify-center mx-auto">
+                          <Upload className={`w-6 h-6 sm:w-8 sm:h-8 ${isDragOver ? "text-[#FFD300]" : "text-muted-foreground"}`} />
                         </div>
                         <div>
                           <p className={`text-base sm:text-lg font-medium mb-2 ${isDragOver ? "text-[#FFD300]" : ""}`}>
@@ -580,23 +568,23 @@ export default function ImportarDadosPage() {
           </div>
 
           {/* Coluna Lateral - Informações */}
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6 order-1 xl:order-2">
             {/* Card com informações sobre o formato esperado */}
             <Card className="border-[#FFD300]/20 shadow-sm hover:shadow-md transition-shadow duration-200">
-              <CardHeader className="bg-gradient-to-r from-[#FFFDF0] to-white">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-[#FFD300]/20 rounded-lg">
-                    <FileSpreadsheet className="w-5 h-5 text-[#0C0C0C]" />
+              <CardHeader className="bg-gradient-to-r from-[#FFFDF0] to-white p-4 sm:p-6">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="p-1.5 sm:p-2 bg-[#FFD300]/20 rounded-lg">
+                    <FileSpreadsheet className="w-4 h-4 sm:w-5 sm:h-5 text-[#0C0C0C]" />
                   </div>
                   <div>
-                    <CardTitle className="text-lg text-[#0C0C0C]">Formato Esperado</CardTitle>
-                    <CardDescription className="text-gray-600">
+                    <CardTitle className="text-base sm:text-lg text-[#0C0C0C]">Formato Esperado</CardTitle>
+                    <CardDescription className="text-gray-600 text-sm">
                       {importType === "produtos" ? "Estrutura para produtos" : "Estrutura para movimentações"}
                     </CardDescription>
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="p-4 sm:p-6 space-y-3 sm:space-y-4">
                 <div className="text-sm space-y-2">
                   {importType === "produtos" ? (
                     <div className="space-y-3">
@@ -646,17 +634,17 @@ export default function ImportarDadosPage() {
 
             {/* Card de Dicas */}
             <Card className="border-[#FFD300]/20 shadow-sm hover:shadow-md transition-shadow duration-200">
-              <CardHeader className="bg-gradient-to-r from-[#FFFDF0] to-white">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-[#FFD300]/20 rounded-lg">
-                    <AlertTriangle className="w-5 h-5 text-[#0C0C0C]" />
+              <CardHeader className="bg-gradient-to-r from-[#FFFDF0] to-white p-4 sm:p-6">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="p-1.5 sm:p-2 bg-[#FFD300]/20 rounded-lg">
+                    <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-[#0C0C0C]" />
                   </div>
                   <div>
-                    <CardTitle className="text-lg text-[#0C0C0C]">Dicas Importantes</CardTitle>
+                    <CardTitle className="text-base sm:text-lg text-[#0C0C0C]">Dicas Importantes</CardTitle>
                   </div>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-4 sm:p-6">
                 <ul className="text-sm space-y-2">
                   <li className="flex items-start gap-2">
                     <span className="text-[#FFD300] mt-0.5">•</span>

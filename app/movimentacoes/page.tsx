@@ -37,7 +37,7 @@ export default function MovimentacoesPage() {
   const [categorias, setCategorias] = useState<string[]>([])
   const [filterDataInicio, setFilterDataInicio] = useState("")
   const [filterDataFim, setFilterDataFim] = useState("")
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc') // 'desc' = mais recente primeiro
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const [exportLoading, setExportLoading] = useState(false)
   const [showExportDialog, setShowExportDialog] = useState(false)
   const [exportOption, setExportOption] = useState<'all' | 'produto' | 'categoria' | 'periodo'>('all')
@@ -48,7 +48,7 @@ export default function MovimentacoesPage() {
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [formData, setFormData] = useState<Omit<Movimentacao, "id" | "dataCriacao">>({
     produto: { id: 0 },
-    tipoMovimentacao: "Compra", // Padrão atualizado para o formato correto
+    tipoMovimentacao: "Compra",
     quantidadeMovimentada: 1,
     dataMovimentacao: new Date().toISOString().split('T')[0]
   })
@@ -57,12 +57,10 @@ export default function MovimentacoesPage() {
   const [showViewDialog, setShowViewDialog] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
 
-  // Função para converter formato de tipo para o backend
   const mapTipoForBackend = (tipo: string): 'COMPRA' | 'VENDA' => {
     return tipo.toLowerCase() === 'compra' ? 'COMPRA' : 'VENDA'
   }
 
-  // Gera um nome de arquivo legível baseado nos filtros ativos
   const sanitizeFilename = (s: string) => {
     return s
       .normalize('NFKD')
@@ -84,17 +82,13 @@ export default function MovimentacoesPage() {
     return `${parts.join('_')}.xlsx`
   }
 
-  // Carregar movimentações
   const loadMovimentacoes = useCallback(async () => {
     try {
       setLoading(true)
       let data: Movimentacao[]
-      
-      // Sempre carrega todas as movimentações e aplica filtros no frontend
-      // Isso é mais simples e permite combinação de filtros
+
       data = await ApiService.listarMovimentacoes()
-      
-      // Buscar informações dos produtos para cada movimentação
+
       const movimentacoesComProdutos = await Promise.all(
         data.map(async (mov) => {
           try {
@@ -119,12 +113,10 @@ export default function MovimentacoesPage() {
     }
   }, [toast])
 
-  // Carregar produtos
   const loadProdutos = useCallback(async () => {
     try {
       const data = await ApiService.listarProdutos()
       setProdutos(data)
-      // extrair categorias únicas para o filtro
       const cats = Array.from(new Set(data.map(p => p.categoria).filter(Boolean))) as string[]
       setCategorias(cats)
     } catch (error) {
@@ -144,6 +136,21 @@ export default function MovimentacoesPage() {
         variant: "destructive"
       })
       return
+    }
+
+    // Validação de estoque para vendas
+    if (formData.tipoMovimentacao.toLowerCase() === 'venda') {
+      const produtoSelecionado = produtos.find(p => p.id === formData.produto.id)
+      if (produtoSelecionado && produtoSelecionado.quantidadeEstoque !== undefined) {
+        if (formData.quantidadeMovimentada > produtoSelecionado.quantidadeEstoque) {
+          toast({
+            title: "Estoque insuficiente",
+            description: `Não é possível vender ${formData.quantidadeMovimentada} unidades. Estoque disponível: ${produtoSelecionado.quantidadeEstoque} unidades.`,
+            variant: "destructive"
+          })
+          return
+        }
+      }
     }
 
     try {
@@ -167,7 +174,6 @@ export default function MovimentacoesPage() {
     }
   }
 
-  // Pesquisar por produto
   const searchMovimentacoes = async () => {
     if (!searchTerm.trim()) {
       loadMovimentacoes()
@@ -209,7 +215,6 @@ export default function MovimentacoesPage() {
     }
   }
 
-  // Exportar movimentações
   const handleExportMovimentacoes = async () => {
     try {
       setExportLoading(true)
@@ -223,7 +228,6 @@ export default function MovimentacoesPage() {
       } else if (filterDataInicio && filterDataFim) {
         result = await ApiService.exportarMovimentacoesPorData(filterDataInicio, filterDataFim)
       } else {
-        // Nenhum filtro aplicado -> exporta todas as movimentações
         result = await ApiService.exportarMovimentacoes()
       }
 
@@ -251,7 +255,6 @@ export default function MovimentacoesPage() {
     }
   }
 
-  // Helper to perform export given explicit options (used by modal)
   const performExport = async (option: 'all' | 'produto' | 'categoria' | 'periodo', opts?: { produtoId?: number; categoria?: string; dataInicio?: string; dataFim?: string }) => {
     try {
       setExportLoading(true)
@@ -271,7 +274,6 @@ export default function MovimentacoesPage() {
       const url = window.URL.createObjectURL(result.blob);
       const a = document.createElement('a');
       a.href = url;
-      // try backend filename, otherwise build a name based on opts or current filters
       let filename = result.filename || buildExportFilename()
       if (!result.filename) {
         const prevParts: string[] = ['movimentacoes']
@@ -300,13 +302,12 @@ export default function MovimentacoesPage() {
   const resetForm = () => {
     setFormData({
       produto: { id: 0 },
-      tipoMovimentacao: "Compra", // Padrão atualizado
+      tipoMovimentacao: "Compra",
       quantidadeMovimentada: 1,
       dataMovimentacao: new Date().toISOString().split('T')[0]
     });
   };
 
-  // Filtrar e ordenar movimentações
   const filteredMovimentacoes = movimentacoes
     .filter(mov => {
       const matchesTipo = !filterTipo || mov.tipoMovimentacao?.toLowerCase() === filterTipo.toLowerCase();
@@ -324,9 +325,9 @@ export default function MovimentacoesPage() {
       const dataB = parseISO(b.dataMovimentacao);
       
       if (sortOrder === 'desc') {
-        return dataB.getTime() - dataA.getTime(); // Mais recente primeiro
+        return dataB.getTime() - dataA.getTime();
       } else {
-        return dataA.getTime() - dataB.getTime(); // Mais antigo primeiro
+        return dataA.getTime() - dataB.getTime();
       }
     });
 
@@ -334,7 +335,6 @@ export default function MovimentacoesPage() {
     loadProdutos()
   }, [])
 
-  // Handlers para ações das movimentações
   const openViewDialog = (mov: MovimentacaoWithProduto) => {
     setSelectedMovimentacao(mov)
     setShowViewDialog(true)
@@ -344,7 +344,6 @@ export default function MovimentacoesPage() {
     setSelectedMovimentacao(mov)
     setFormData({
       produto: { id: mov.produto.id },
-      // Normaliza para apresentação no select (Compra/Venda)
       tipoMovimentacao: mov.tipoMovimentacao?.toLowerCase() === 'compra' ? 'Compra' : 'Venda',
       quantidadeMovimentada: mov.quantidadeMovimentada,
       dataMovimentacao: mov.dataMovimentacao
@@ -352,11 +351,10 @@ export default function MovimentacoesPage() {
     setShowEditDialog(true)
   }
 
-  // Função para renderizar movimentação como card mobile
   const renderMovimentacaoCard = (movimentacao: MovimentacaoWithProduto, index: number) => {
     const parsedDate = parseISO(movimentacao.dataMovimentacao);
     const dataFormatada = isValid(parsedDate)
-      ? format(parsedDate, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })
+      ? format(parsedDate, "dd/MM/yyyy", { locale: ptBR })
       : "-";
 
     const tipoMovimentacao = movimentacao.tipoMovimentacao?.toLowerCase() === 'compra' ? 'Compra' : 'Venda';
@@ -406,6 +404,22 @@ export default function MovimentacoesPage() {
 
   const handleUpdateMovimentacao = async () => {
     if (!selectedMovimentacao?.id) return
+
+    // Validação de estoque para vendas
+    if (formData.tipoMovimentacao.toLowerCase() === 'venda') {
+      const produtoSelecionado = produtos.find(p => p.id === formData.produto.id)
+      if (produtoSelecionado && produtoSelecionado.quantidadeEstoque !== undefined) {
+        if (formData.quantidadeMovimentada > produtoSelecionado.quantidadeEstoque) {
+          toast({
+            title: "Estoque insuficiente",
+            description: `Não é possível vender ${formData.quantidadeMovimentada} unidades. Estoque disponível: ${produtoSelecionado.quantidadeEstoque} unidades.`,
+            variant: "destructive"
+          })
+          return
+        }
+      }
+    }
+
     try {
   const payload = { ...formData, tipoMovimentacao: mapTipoForBackend(formData.tipoMovimentacao) }
   await ApiService.atualizarMovimentacao(selectedMovimentacao.id, payload as Movimentacao)
@@ -636,7 +650,7 @@ export default function MovimentacoesPage() {
                 <CardHeader className="pb-4">
                   <div className="flex items-center gap-2">
                     <Filter className="h-4 w-4 text-gray-600" />
-                    <CardTitle className="text-base text-gray-700">Filtros Rápidos</CardTitle>
+                    <CardTitle className="text-base text-gray-700">Filtros</CardTitle>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -815,12 +829,10 @@ export default function MovimentacoesPage() {
                   </CardHeader>
                   <CardContent className="p-0">
                     {isMobile ? (
-                      // Renderização mobile com cards
                       <div className="p-4 space-y-4">
                         {filteredMovimentacoes.map((movimentacao, index) => renderMovimentacaoCard(movimentacao, index))}
                       </div>
                     ) : (
-                      // Renderização desktop com tabela
                       <div className="overflow-x-auto">
                         <Table>
                           <TableHeader>
@@ -1490,7 +1502,6 @@ export default function MovimentacoesPage() {
             </Button>
             <Button
               onClick={async () => {
-                // validação simples
                 if (exportOption === 'produto' && !exportProdutoId) {
                   toast({ title: 'Selecione um produto', variant: 'destructive' })
                   return
