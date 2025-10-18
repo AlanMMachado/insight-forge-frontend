@@ -35,35 +35,74 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080'
 
+  // Função para limpar dados de autenticação
+  const clearAuth = (): void => {
+    setToken(null)
+    setUser(null)
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
+      document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+    }
+  }
+
   // Verificar se estamos no cliente
   useEffect(() => {
     setIsClient(true)
   }, [])
 
-  // Verificar se há token salvo ao carregar a aplicação
+  // Verificar se há token salvo ao carregar a aplicação e validar sua validade
   useEffect(() => {
     // Só executar quando estivermos no cliente
     if (!isClient) {
       return
     }
 
-    const savedToken = localStorage.getItem('token')
-    const savedUser = localStorage.getItem('user')
-
-    if (savedToken && savedUser) {
-      setToken(savedToken)
-      // Salvar token no cookie também para o middleware
-      document.cookie = `token=${savedToken}; path=/; max-age=${7 * 24 * 60 * 60}` // 7 dias
+    const initializeAuth = async () => {
       try {
-        setUser(JSON.parse(savedUser))
+        const savedToken = localStorage.getItem('token')
+        const savedUser = localStorage.getItem('user')
+
+        if (savedToken && savedUser) {
+          // Validar o token antes de usar
+          try {
+            const response = await fetch(`${API_BASE_URL}/api/auth/validate`, {
+              method: 'GET',
+              headers: {
+                'Authorization': `Bearer ${savedToken}`,
+                'Content-Type': 'application/json',
+              },
+            })
+
+            if (response.ok) {
+              // Token válido
+              setToken(savedToken)
+              document.cookie = `token=${savedToken}; path=/; max-age=${7 * 24 * 60 * 60}` // 7 dias
+              try {
+                setUser(JSON.parse(savedUser))
+              } catch (error) {
+                console.error('Erro ao carregar dados do usuário:', error)
+                clearAuth()
+              }
+            } else {
+              // Token inválido ou expirado
+              console.log('Token inválido ou expirado')
+              clearAuth()
+            }
+          } catch (error) {
+            console.error('Erro ao validar token:', error)
+            // Se o endpoint não existir ou houver erro, assume token como inválido
+            clearAuth()
+          }
+        }
       } catch (error) {
-        console.error('Erro ao carregar dados do usuário:', error)
-        localStorage.removeItem('token')
-        localStorage.removeItem('user')
-        document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+        console.error('Erro ao inicializar autenticação:', error)
+      } finally {
+        setIsLoading(false)
       }
     }
-    setIsLoading(false)
+
+    initializeAuth()
   }, [isClient])
 
   // Decodificar JWT para extrair dados do usuário
@@ -159,17 +198,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }
 
   const logout = (): void => {
-    setToken(null)
-    setUser(null)
-    
-    // Verificar se estamos no lado do cliente antes de acessar localStorage e document
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
-      // Remove token do cookie
-      document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
-    }
-    
+    clearAuth()
     router.push('/login')
   }
 

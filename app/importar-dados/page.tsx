@@ -18,6 +18,7 @@ import { QuickProductRegistration } from "@/components/quick-product-registratio
 import { ReimportConfirmationDialog } from "@/components/reimport-confirmation-dialog"
 import AuthenticatedLayout from "@/components/authenticated-layout"
 import { ImportStatus, ImportMovimentacoesResponse, ImportProdutosResponse } from "@/types/import"
+import { PageHeader } from "@/components/page-header"
 
 type ImportType = "produtos" | "movimentacoes"
 
@@ -339,23 +340,12 @@ export default function ImportarDadosPage() {
   return (
     <AuthenticatedLayout>
       <div className="p-3 sm:p-4 lg:p-6 space-y-4 sm:space-y-6">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-white to-[#FFFDF0] p-4 sm:p-6 rounded-2xl border border-[#FFD300]/20 shadow-sm">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
-              <div className="p-2 sm:p-3 bg-gradient-to-br from-[#FFD300] to-[#E6BD00] rounded-xl shadow-md">
-                <Upload className="h-6 w-6 sm:h-8 sm:w-8 text-[#0C0C0C]" />
-              </div>
-              <div>
-                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-[#0C0C0C] mb-1">Importar Dados</h1>
-                <p className="text-gray-600 flex items-center gap-2 text-sm sm:text-base">
-                  <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-[#FFD300] rounded-full"></span>
-                  Importe produtos ou movimentações através de planilhas
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
+      <PageHeader
+        icon={<Upload className="h-8 w-8 text-[#0C0C0C]" />}
+        title="Importar Dados"
+        description="Importe produtos ou movimentações através de planilhas"
+        padding="compact"
+      />
 
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6">
           {/* Card Principal - Upload */}

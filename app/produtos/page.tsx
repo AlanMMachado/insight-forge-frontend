@@ -20,6 +20,7 @@ import AuthenticatedLayout from "@/components/authenticated-layout"
 import MobileDataCard, { createDefaultActions, CardField } from "@/components/mobile-data-card"
 import { ImageUploadZone } from "@/components/image-upload-zone"
 import { useIsMobile } from "@/hooks/use-mobile"
+import { PageHeader } from "@/components/page-header"
 
 export default function ProdutosPage() {
   const router = useRouter()
@@ -408,23 +409,12 @@ export default function ProdutosPage() {
   return (
     <AuthenticatedLayout>
       <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-white to-[#FFFDF0] p-6 rounded-2xl border border-[#FFD300]/20 shadow-sm">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
-            <div className="p-3 bg-gradient-to-br from-[#FFD300] to-[#E6BD00] rounded-xl shadow-md">
-              <Package className="h-8 w-8 text-[#0C0C0C]" />
-            </div>
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-[#0C0C0C] mb-1">Produtos</h1>
-              <p className="text-gray-600 flex items-center gap-2">
-                <span className="w-2 h-2 bg-[#FFD300] rounded-full"></span>
-                Gerencie seu catálogo de produtos
-              </p>
-            </div>
-          </div>
-          
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
+      <PageHeader
+        icon={<Package className="h-8 w-8 text-[#0C0C0C]" />}
+        title="Produtos"
+        description="Gerencie seu catálogo de produtos"
+        actions={
+          <>
             <Button 
               onClick={() => router.push('/importar-dados')} 
               variant="outline" 
@@ -440,9 +430,9 @@ export default function ProdutosPage() {
               <Package className="w-4 h-4 mr-2" />
               Novo Produto
             </Button>
-          </div>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       {/* Card de Busca - simplificado */}
       <Card className="border-[#FFD300]/20 shadow-sm hover:shadow-md transition-shadow duration-200">

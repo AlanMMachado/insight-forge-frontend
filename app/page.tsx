@@ -9,22 +9,28 @@ export default function HomePage() {
   const router = useRouter()
 
   useEffect(() => {
-    if (!isLoading) {
-      if (isAuthenticated) {
-        router.push('/dashboard')
-      } else {
-        router.push('/login')
-      }
+    // Se ainda está carregando, não fazer nada
+    if (isLoading) {
+      return
+    }
+
+    // Se autenticado, ir para dashboard
+    if (isAuthenticated) {
+      router.push('/dashboard')
+    } else {
+      // Se não autenticado, ir para login
+      router.push('/login')
     }
   }, [isAuthenticated, isLoading, router])
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+  // Sempre mostrar loading enquanto verifica autenticação
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-[#FFD300]/10 to-[#FFD300]/5">
+      <div className="flex flex-col items-center gap-4">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#FFD300]/30 border-t-[#FFD300]"></div>
+        <p className="text-sm text-gray-600">Carregando...</p>
       </div>
-    )
-  }
-
-  return null
+    </div>
+  )
 }
+

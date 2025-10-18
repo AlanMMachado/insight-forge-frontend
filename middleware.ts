@@ -2,23 +2,27 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 // Rotas que não precisam de autenticação
-const publicRoutes = ['/login', '/register', '/unauthorized']
+const publicRoutes = ['/login', '/register', '/unauthorized', '/']
 
 // Rotas que são apenas para usuários não autenticados
 const authRoutes = ['/login', '/register']
 
-// Rotas que precisam de roles específicos
-const roleBasedRoutes: Record<string, string[]> = {
-  '/admin': ['ADMIN'],
-  // Adicione mais rotas conforme necessário
-}
-
+/**
+ * Middleware para proteger rotas e garantir autenticação
+ * - Rota raiz (/) redireciona para login se não autenticado
+ * - Rotas públicas: /login, /register, /unauthorized, /
+ * - Rotas autenticadas: dashboard, produtos, movimentacoes, etc.
+ */
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   const token = request.cookies.get('token')?.value
 
-  // Se for uma rota pública, permite acesso
+  // Se é rota pública, permite acesso
   if (publicRoutes.includes(pathname)) {
+    // Se é rota de auth e tem token, redireciona para dashboard
+    if (authRoutes.includes(pathname) && token) {
+      return NextResponse.redirect(new URL('/dashboard', request.url))
+    }
     return NextResponse.next()
   }
 
@@ -27,20 +31,14 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  // Se tem token e está tentando acessar rotas de auth, redireciona para dashboard
-  if (authRoutes.includes(pathname)) {
-    return NextResponse.redirect(new URL('/dashboard', request.url))
-  }
-
-  // TODO: Aqui você pode decodificar o JWT para verificar roles
-  // Por enquanto, permite acesso a todas as rotas autenticadas
-  
+  // Token existe, permite acesso
   return NextResponse.next()
 }
 
 // Configure em quais rotas o middleware deve executar
 export const config = {
   matcher: [
+    // Executa em todas as rotas exceto as estáticas
     '/((?!api|_next/static|_next/image|favicon.ico|public).*)',
   ],
 }
