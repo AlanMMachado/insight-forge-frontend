@@ -584,7 +584,7 @@ export default function ProdutosPage() {
           ) : (
             <div className="space-y-6">
               {/* Filtros movidos para dentro do card de produtos */}
-              <Card className="bg-gray-50/50 border-gray-200/50">
+              <Card className="bg-gray-50/50 border-gray-200/50 mt-5">
                 <CardHeader className="pb-4">
                   <div className="flex items-center gap-2">
                     <Filter className="h-4 w-4 text-gray-600" />

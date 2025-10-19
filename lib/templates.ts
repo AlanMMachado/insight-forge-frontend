@@ -6,7 +6,7 @@ export async function createProdutosTemplate(): Promise<Blob> {
   const data = [
     ['Nome', 'Preço', 'Custo', 'Descrição', 'Categoria', 'Quantidade Estoque'],
     ['Smartphone XYZ', 899.99, 799.99, 'Smartphone com 128GB de armazenamento', 'Eletrônicos', 50],
-    ['Camiseta Básica', 29.90, 19.90, 'Camiseta 100% algodão tamanho M', 'Roupas', 120],
+    ['Camiseta', 29.90, 19.90, 'Camiseta 100% algodão tamanho M', 'Roupas', 120],
     ['Livro de Programação', 45.50, 35.50, 'Guia completo para desenvolvedores', 'Livros', 25],
     ['Notebook Gamer', 2499.99, 1999.99, 'Notebook para jogos com placa de vídeo dedicada', 'Eletrônicos', 10],
   ]
@@ -44,7 +44,7 @@ export async function createMovimentacoesTemplate(): Promise<Blob> {
   const data = [
     ['Nome do Produto', 'Quantidade Movimentada', 'Data da Movimentação', 'Tipo de Movimentação'],
     ['Smartphone XYZ', 10, '2025-08-15', 'Compra'],
-    ['Camiseta Básica', 5, '2025-08-16', 'Venda'],
+    ['Camiseta', 5, '2025-08-16', 'Venda'],
     ['Livro de Programação', 20, '2025-07-17', 'Compra'],
     ['Smartphone XYZ', 3, '2025-07-18', 'Venda'],
     ['Notebook Gamer', 2, '2025-08-19', 'Compra'],
