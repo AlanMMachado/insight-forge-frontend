@@ -453,7 +453,7 @@ export default function ProdutosPage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 items-end">
             {/* Campo de busca */}
             <div className="lg:col-span-5">
-              <Label htmlFor="search" className="text-sm font-medium text-gray-700 mb-2 block">
+              <Label htmlFor="search" className="text-sm font-medium text-gray-700 mt-2 mb-2 block">
                 Nome do Produto
               </Label>
               <div className="relative">

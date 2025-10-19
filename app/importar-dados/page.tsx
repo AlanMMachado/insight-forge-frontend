@@ -367,7 +367,7 @@ export default function ImportarDadosPage() {
               <CardContent className="space-y-6">
                 {/* Seleção do tipo de importação */}
                 <div>
-                  <Label className="text-sm font-medium mb-3 block">
+                  <Label className="text-sm font-medium mt-2 mb-2 block">
                     Tipo de Importação
                   </Label>
                   <RadioGroup 

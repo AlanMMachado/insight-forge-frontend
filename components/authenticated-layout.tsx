@@ -56,9 +56,9 @@ export default function AuthenticatedLayout({ children, allowedRoles }: Authenti
         onOpenChange={setSidebarOpen}
       >
         <AppSidebar />
-        <SidebarInset>
+        <SidebarInset className="w-full max-w-full">
           {/* Header apenas para desktop */}
-          <header className="hidden lg:flex h-16 shrink-0 items-center gap-2 border-b border-[#CFCFCF] px-4 bg-white">
+          <header className="hidden md:flex h-16 shrink-0 items-center gap-2 border-b border-[#CFCFCF] px-4 bg-white">
             <SidebarTrigger className="-ml-1 text-[#000000] hover:bg-[#F8F8F8]" />
             <div className="h-4 w-px bg-[#CFCFCF]" />
             <h2 className="text-lg font-semibold text-[#000000]">Insight Forge</h2>
@@ -93,7 +93,7 @@ export default function AuthenticatedLayout({ children, allowedRoles }: Authenti
           </header>
 
           {/* Header Mobile */}
-          <header className="lg:hidden flex h-16 shrink-0 items-center gap-2 border-b border-[#CFCFCF] px-4 bg-white">
+          <header className="md:hidden flex h-16 shrink-0 items-center gap-2 border-b border-[#CFCFCF] px-4 bg-white">
             <div className="flex items-center gap-3">
               <div className="flex items-center justify-center w-8 h-8 bg-amber-400 rounded">
                 <BarChart3 className="w-5 h-5 text-gray-900" />
@@ -130,7 +130,7 @@ export default function AuthenticatedLayout({ children, allowedRoles }: Authenti
             </div>
           </header>
 
-          <main className="flex-1 bg-[#F8F8F8] min-h-screen overflow-auto pb-16 lg:pb-0 overflow-x-hidden">
+          <main className="flex-1 bg-[#F8F8F8] min-h-screen overflow-auto pb-20 md:pb-0 overflow-x-hidden w-full max-w-full">
             {children}
           </main>
         </SidebarInset>

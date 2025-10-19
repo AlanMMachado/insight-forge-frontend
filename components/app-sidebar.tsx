@@ -64,30 +64,30 @@ export function AppSidebar() {
 
   // Navbar Mobile (visível apenas em telas pequenas)
   const MobileNavbar = () => (
-    <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-sidebar border-t border-sidebar-accent shadow-lg">
-      <div className="flex items-center justify-around py-3">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-sidebar border-t border-sidebar-accent shadow-lg safe-area-inset-bottom">
+      <div className="flex items-center justify-between px-1 py-3">
         {filteredMenuItems.map((item) => (
           <button
             key={item.title}
             onClick={() => handleNavigation(item.url, item.title)}
-            className={`flex flex-col items-center p-2 min-w-0 flex-1 rounded-lg mx-1 transition-colors duration-200 ${
+            className={`flex flex-col items-center justify-center flex-1 py-2 px-1 rounded-lg mx-0.5 transition-colors duration-200 ${
               pathname === item.url 
                 ? 'bg-amber-400 text-gray-900 font-medium' 
                 : 'text-white hover:bg-sidebar-accent hover:text-amber-400'
             }`}
           >
-            <item.icon className="w-6 h-6 mb-1" />
-            <span className="text-xs font-medium truncate">{item.title}</span>
+            <item.icon className="w-6 h-6 mb-1 flex-shrink-0" />
+            <span className="text-[10px] font-medium truncate max-w-[50px] leading-tight">{item.title}</span>
           </button>
         ))}
       </div>
-    </div>
+    </nav>
   )
 
   return (
     <>
       {/* Sidebar Desktop (visível apenas em telas grandes) */}
-      <Sidebar collapsible="icon" className="bg-sidebar border-r-0 transition-all duration-200 hidden lg:flex">
+      <Sidebar collapsible="icon" className="bg-sidebar border-r-0 transition-all duration-200 hidden md:flex">
         <SidebarHeader className="p-8 group-data-[collapsible=icon]:p-6">
           <div className="flex items-center gap-4 group-data-[collapsible=icon]:justify-center">
             <div className="flex items-center justify-center w-12 h-12 bg-amber-400 rounded flex-shrink-0">
